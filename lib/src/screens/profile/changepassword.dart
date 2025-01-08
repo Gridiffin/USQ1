@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class ChangePasswordPage extends StatefulWidget {
   @override
@@ -8,29 +9,61 @@ class ChangePasswordPage extends StatefulWidget {
 class _ChangePasswordPageState extends State<ChangePasswordPage> {
   final TextEditingController _oldPasswordController = TextEditingController();
   final TextEditingController _newPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
   bool _isOldPasswordHidden = true;
   bool _isNewPasswordHidden = true;
+  bool _isConfirmPasswordHidden = true;
 
-  void _handleSubmit(BuildContext context) {
+  Future<void> _handleSubmit(BuildContext context) async {
     if (_oldPasswordController.text.isEmpty ||
-        _newPasswordController.text.isEmpty) {
+        _newPasswordController.text.isEmpty ||
+        _confirmPasswordController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please enter both old and new passwords.')),
+        SnackBar(content: Text('Please fill in all the fields.')),
       );
       return;
     }
 
-    // Show success message
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Your password has been changed.')),
-    );
+    if (_newPasswordController.text != _confirmPasswordController.text) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('New passwords do not match.')),
+      );
+      return;
+    }
 
-    // Refresh the page
-    Future.delayed(Duration(seconds: 2), () {
+    try {
+      User? user = FirebaseAuth.instance.currentUser;
+      String email = user?.email ?? '';
+
+      // Reauthenticate the user
+      AuthCredential credential = EmailAuthProvider.credential(
+        email: email,
+        password: _oldPasswordController.text,
+      );
+      await user?.reauthenticateWithCredential(credential).catchError((error) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Old password is incorrect.')),
+        );
+        throw error;
+      });
+
+      // Update password
+      await user?.updatePassword(_newPasswordController.text);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Your password has been changed successfully.')),
+      );
+
       _oldPasswordController.clear();
       _newPasswordController.clear();
+      _confirmPasswordController.clear();
       setState(() {});
-    });
+    } catch (error) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: ${error.toString()}')),
+      );
+    }
   }
 
   @override
@@ -88,6 +121,30 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                   onPressed: () {
                     setState(() {
                       _isNewPasswordHidden = !_isNewPasswordHidden;
+                    });
+                  },
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+            SizedBox(height: 20),
+            TextField(
+              controller: _confirmPasswordController,
+              obscureText: _isConfirmPasswordHidden,
+              decoration: InputDecoration(
+                hintText: 'Confirm your New Password',
+                prefixIcon: Icon(Icons.lock),
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    _isConfirmPasswordHidden
+                        ? Icons.visibility
+                        : Icons.visibility_off,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _isConfirmPasswordHidden = !_isConfirmPasswordHidden;
                     });
                   },
                 ),
