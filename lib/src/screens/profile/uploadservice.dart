@@ -1,96 +1,106 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:uuid/uuid.dart';
 
-class UploadServicePage extends StatelessWidget {
-  void _showUploadSuccessDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: Colors.transparent,
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.check_circle,
-                size: 100,
-                color: Colors.green,
-              ),
-              SizedBox(height: 10),
-              Text(
-                'Service Uploaded',
-                style: TextStyle(fontSize: 18, color: Colors.white),
-              ),
-            ],
-          ),
-        );
-      },
-    );
+class UploadServiceScreen extends StatefulWidget {
+  @override
+  _UploadServiceScreenState createState() => _UploadServiceScreenState();
+}
+
+class _UploadServiceScreenState extends State<UploadServiceScreen> {
+  final _titleController = TextEditingController();
+  final _descriptionController = TextEditingController();
+  final _priceController = TextEditingController();
+  final _categoryController = TextEditingController();
+  final _tagsController = TextEditingController();
+
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  void _uploadService() async {
+    final uuid = Uuid();
+    final serviceId = uuid.v4();
+
+    try {
+      await _firestore.collection('services').doc(serviceId).set({
+        'id': serviceId,
+        'title': _titleController.text,
+        'description': _descriptionController.text,
+        'price': double.parse(_priceController.text),
+        'category': _categoryController.text,
+        'tags': _tagsController.text.split(','),
+        'providerId': 'currentUserId', // Replace with actual provider ID
+        'rating': 0.0,
+        'images': [], // Add logic for image uploads if needed
+        'createdAt': DateTime.now().toIso8601String(),
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Service uploaded successfully!')),
+      );
+      _clearForm();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to upload service: $e')),
+      );
+    }
+  }
+
+  void _clearForm() {
+    _titleController.clear();
+    _descriptionController.clear();
+    _priceController.clear();
+    _categoryController.clear();
+    _tagsController.clear();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Service Provided'),
+        title: Text('Upload Service'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 150,
-                height: 150,
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(
-                  Icons.upload,
-                  size: 50,
-                  color: Colors.black,
-                ),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TextField(
+                controller: _titleController,
+                decoration: InputDecoration(labelText: 'Title'),
               ),
-            ),
-            SizedBox(height: 10),
-            Center(
-              child: Text(
-                'Upload Flyer here',
-                style: TextStyle(fontSize: 16, color: Colors.black),
+              SizedBox(height: 10),
+              TextField(
+                controller: _descriptionController,
+                decoration: InputDecoration(labelText: 'Description'),
+                maxLines: 3,
               ),
-            ),
-            SizedBox(height: 20),
-            Text(
-              'Service Details:',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 10),
-            TextField(
-              maxLines: 5,
-              decoration: InputDecoration(
-                hintText: 'Input details here.......',
-                border: OutlineInputBorder(),
+              SizedBox(height: 10),
+              TextField(
+                controller: _priceController,
+                decoration: InputDecoration(labelText: 'Price'),
+                keyboardType: TextInputType.number,
               ),
-            ),
-            Spacer(),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.greenAccent,
-                  padding: EdgeInsets.symmetric(vertical: 16),
-                ),
-                onPressed: () {
-                  _showUploadSuccessDialog(context);
-                },
-                child: Text(
-                  'Upload',
-                  style: TextStyle(fontSize: 16, color: Colors.white),
+              SizedBox(height: 10),
+              TextField(
+                controller: _categoryController,
+                decoration: InputDecoration(labelText: 'Category'),
+              ),
+              SizedBox(height: 10),
+              TextField(
+                controller: _tagsController,
+                decoration: InputDecoration(labelText: 'Tags (comma separated)'),
+              ),
+              SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _uploadService,
+                  child: Text('Upload Service'),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
