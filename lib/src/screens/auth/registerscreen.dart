@@ -10,6 +10,7 @@ class RegisterScreen extends StatefulWidget {
 class _RegisterScreenState extends State<RegisterScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
   final AuthService _authService = AuthService();
 
   String? _errorMessage;
@@ -18,6 +19,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() {
       _errorMessage = null;
     });
+
+    if (_passwordController.text != _confirmPasswordController.text) {
+      setState(() {
+        _errorMessage = "Passwords do not match.";
+      });
+      return;
+    }
+
     try {
       User? user = await _authService.registerWithEmailAndPassword(
           _emailController.text.trim(), _passwordController.text.trim());
@@ -52,6 +61,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
               controller: _passwordController,
               obscureText: true,
               decoration: InputDecoration(labelText: 'Password'),
+            ),
+            TextField(
+              controller: _confirmPasswordController,
+              obscureText: true,
+              decoration: InputDecoration(labelText: 'Confirm Password'),
             ),
             SizedBox(height: 20),
             ElevatedButton(

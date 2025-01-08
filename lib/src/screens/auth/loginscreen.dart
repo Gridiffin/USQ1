@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../services/authservice.dart';
-import '../../screens/home/homepage.dart';
+import 'registerscreen.dart';
+import '../home/homepage.dart';
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -21,12 +22,15 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       final user = await _authService.loginWithEmailAndPassword(
           _emailController.text.trim(), _passwordController.text.trim());
-      if (user != null) {
-        // Navigate to the home screen
+      if (user != null && user.emailVerified) {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => HomePage()),
         );
+      } else if (user != null && !user.emailVerified) {
+        setState(() {
+          _errorMessage = "Email is not verified. Please verify your email.";
+        });
       }
     } catch (error) {
       setState(() {
@@ -65,7 +69,23 @@ class _LoginScreenState extends State<LoginScreen> {
                 _errorMessage!,
                 style: TextStyle(color: Colors.red),
               ),
-            ]
+            ],
+            SizedBox(height: 20),
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => RegisterScreen()),
+                );
+              },
+              child: Text(
+                'New User? Register Here',
+                style: TextStyle(
+                  color: Colors.blue,
+                  decoration: TextDecoration.underline,
+                ),
+              ),
+            ),
           ],
         ),
       ),
