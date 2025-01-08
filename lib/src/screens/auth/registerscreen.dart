@@ -19,6 +19,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   String? _errorMessage;
+  bool _isPasswordHidden = true;
+  bool _isConfirmPasswordHidden = true;
 
   void _register() async {
     setState(() {
@@ -87,7 +89,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  'Create an account',
+                  'Create an Account',
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
@@ -124,20 +126,44 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 SizedBox(height: 10),
                 TextField(
                   controller: _passwordController,
-                  obscureText: true,
+                  obscureText: _isPasswordHidden,
                   decoration: InputDecoration(
                     labelText: 'Password',
                     prefixIcon: Icon(Icons.lock),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _isPasswordHidden
+                            ? Icons.visibility
+                            : Icons.visibility_off,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _isPasswordHidden = !_isPasswordHidden;
+                        });
+                      },
+                    ),
                     border: OutlineInputBorder(),
                   ),
                 ),
                 SizedBox(height: 10),
                 TextField(
                   controller: _confirmPasswordController,
-                  obscureText: true,
+                  obscureText: _isConfirmPasswordHidden,
                   decoration: InputDecoration(
                     labelText: 'Confirm Password',
                     prefixIcon: Icon(Icons.lock),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _isConfirmPasswordHidden
+                            ? Icons.visibility
+                            : Icons.visibility_off,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _isConfirmPasswordHidden = !_isConfirmPasswordHidden;
+                        });
+                      },
+                    ),
                     border: OutlineInputBorder(),
                   ),
                 ),
@@ -150,7 +176,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   child: Text(
                     'Create Account',
-                    style: TextStyle(fontSize: 16),
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
                 SizedBox(height: 20),
@@ -160,7 +189,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     child: Text(
                       'I Already Have an Account Login',
                       style: TextStyle(
-                        color: Colors.greenAccent,
+                        color: Colors.black,
                         decoration: TextDecoration.underline,
                       ),
                     ),
