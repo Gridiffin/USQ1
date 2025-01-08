@@ -27,7 +27,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     if (!_emailController.text.trim().endsWith("unimas.my")) {
       setState(() {
-        _errorMessage = "Only emails ending with '@unimas.my' are allowed.";
+        _errorMessage = "Only UNIMAS emails are allowed.";
       });
       return;
     }
