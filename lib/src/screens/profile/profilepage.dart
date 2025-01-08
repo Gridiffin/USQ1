@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'uploadservice.dart';
 import 'changepassword.dart';
 import '../auth/loginscreen.dart';
+import 'settings.dart'; // Import settings.dart
 import 'package:firebase_auth/firebase_auth.dart'; // Firebase Auth import
 import 'package:cloud_firestore/cloud_firestore.dart'; // Firestore import
 
@@ -12,6 +13,8 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
+  String userName = 'Anonymous';
+
   @override
   Widget build(BuildContext context) {
     final User? user = FirebaseAuth.instance.currentUser;
@@ -33,7 +36,7 @@ class _ProfilePageState extends State<ProfilePage> {
           }
 
           final userData = snapshot.data!.data() as Map<String, dynamic>;
-          final String userName = userData['name'] ?? 'Anonymous';
+          userName = userData['name'] ?? 'Anonymous';
           final String userEmail = user?.email ?? 'No Email';
 
           return Padding(
@@ -67,8 +70,19 @@ class _ProfilePageState extends State<ProfilePage> {
                 ListTile(
                   leading: Icon(Icons.settings, color: Colors.green),
                   title: Text('Settings'),
-                  onTap: () {
-                    _navigateToSettings(context, user, userName);
+                  onTap: () async {
+                    final newName = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            SettingsPage(user: user, currentName: userName),
+                      ),
+                    );
+                    if (newName != null && newName is String) {
+                      setState(() {
+                        userName = newName;
+                      });
+                    }
                   },
                 ),
                 Divider(),
@@ -107,58 +121,6 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
           );
         },
-      ),
-    );
-  }
-
-  // Navigate to settings screen with edit profile and change name functionality
-  void _navigateToSettings(
-      BuildContext context, User? user, String currentName) {
-    TextEditingController nameController =
-        TextEditingController(text: currentName);
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => Scaffold(
-          appBar: AppBar(title: Text('Settings')),
-          body: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              children: [
-                TextField(
-                  decoration: InputDecoration(
-                    labelText: 'Change Name',
-                    border: OutlineInputBorder(),
-                  ),
-                  controller: nameController,
-                ),
-                SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: () async {
-                    String newName = nameController.text.trim();
-                    if (newName.isNotEmpty && user != null) {
-                      await FirebaseFirestore.instance
-                          .collection('users')
-                          .doc(user.uid)
-                          .update({'name': newName});
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Name updated successfully!')),
-                      );
-                      setState(() {}); // Refresh the profile page
-                      Navigator.pop(context);
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Name cannot be empty!')),
-                      );
-                    }
-                  },
-                  child: Text('Save'),
-                ),
-              ],
-            ),
-          ),
-        ),
       ),
     );
   }
