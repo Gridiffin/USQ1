@@ -22,6 +22,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _isPasswordHidden = true;
   bool _isConfirmPasswordHidden = true;
 
+  Future<bool> _isMatricIdUnique(String matricId) async {
+    final querySnapshot = await _firestore
+        .collection('users')
+        .where('matricId', isEqualTo: matricId)
+        .get();
+
+    return querySnapshot.docs.isEmpty;
+  }
+
   void _register() async {
     setState(() {
       _errorMessage = null;
@@ -37,6 +46,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (_passwordController.text != _confirmPasswordController.text) {
       setState(() {
         _errorMessage = "Passwords do not match.";
+      });
+      return;
+    }
+
+    final isUnique = await _isMatricIdUnique(_matricIdController.text.trim());
+    if (!isUnique) {
+      setState(() {
+        _errorMessage = "Matric ID already exists.";
       });
       return;
     }
