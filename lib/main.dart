@@ -1,6 +1,7 @@
 import 'package:firebase_core/firebase_core.dart'; // Import Firebase Core
 import 'package:flutter/material.dart';
 import 'firebase_options.dart'; // Import generated Firebase options
+import 'screens/home_screen.dart'; // Import the home screen
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized(); // Ensures proper initialization
@@ -8,11 +9,12 @@ void main() async {
     options: DefaultFirebaseOptions
         .currentPlatform, // Load the appropriate options for the platform
   );
-  runApp(MyApp()); // Make sure MyApp() is properly defined and called here
+  runApp(MyApp()); // Run the app
 }
 
-// Define the MyApp class
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -20,25 +22,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: HomePage(), // Define a basic HomePage
-    );
-  }
-}
-
-// Define the HomePage class for the app's home screen
-class HomePage extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Firebase Initialized'),
-      ),
-      body: Center(
-        child: Text(
-          'Firebase is successfully initialized!',
-          style: TextStyle(fontSize: 18),
-        ),
-      ),
+      home: HomeScreen(), // Updated to use a separated HomeScreen file
     );
   }
 }
