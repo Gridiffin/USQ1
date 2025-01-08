@@ -6,7 +6,12 @@ import '../auth/loginscreen.dart';
 import 'package:firebase_auth/firebase_auth.dart'; // Firebase Auth import
 import 'package:cloud_firestore/cloud_firestore.dart'; // Firestore import
 
-class ProfilePage extends StatelessWidget {
+class ProfilePage extends StatefulWidget {
+  @override
+  _ProfilePageState createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     final User? user = FirebaseAuth.instance.currentUser;
@@ -14,14 +19,6 @@ class ProfilePage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text('Profile'),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.edit),
-            onPressed: () {
-              _navigateToEditProfile(context);
-            },
-          ),
-        ],
       ),
       body: FutureBuilder<DocumentSnapshot>(
         future:
@@ -66,20 +63,12 @@ class ProfilePage extends StatelessWidget {
                     ],
                   ),
                 ),
-                SizedBox(height: 20),
-                ListTile(
-                  leading: Icon(Icons.shopping_bag, color: Colors.green),
-                  title: Text('My Orders'),
-                  onTap: () {
-                    _navigateToOrders(context);
-                  },
-                ),
                 Divider(),
                 ListTile(
                   leading: Icon(Icons.settings, color: Colors.green),
                   title: Text('Settings'),
                   onTap: () {
-                    _navigateToSettings(context);
+                    _navigateToSettings(context, user, userName);
                   },
                 ),
                 Divider(),
@@ -122,45 +111,52 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
-  // Navigate to edit profile screen (placeholder)
-  void _navigateToEditProfile(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => Scaffold(
-          appBar: AppBar(title: Text('Edit Profile')),
-          body: Center(
-            child: Text('Edit Profile Screen (Placeholder)'),
-          ),
-        ),
-      ),
-    );
-  }
+  // Navigate to settings screen with edit profile and change name functionality
+  void _navigateToSettings(
+      BuildContext context, User? user, String currentName) {
+    TextEditingController nameController =
+        TextEditingController(text: currentName);
 
-  // Navigate to orders screen (placeholder)
-  void _navigateToOrders(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => Scaffold(
-          appBar: AppBar(title: Text('My Orders')),
-          body: Center(
-            child: Text('Orders Screen (Placeholder)'),
-          ),
-        ),
-      ),
-    );
-  }
-
-  // Navigate to settings screen (placeholder)
-  void _navigateToSettings(BuildContext context) {
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => Scaffold(
           appBar: AppBar(title: Text('Settings')),
-          body: Center(
-            child: Text('Settings Screen (Placeholder)'),
+          body: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: [
+                TextField(
+                  decoration: InputDecoration(
+                    labelText: 'Change Name',
+                    border: OutlineInputBorder(),
+                  ),
+                  controller: nameController,
+                ),
+                SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () async {
+                    String newName = nameController.text.trim();
+                    if (newName.isNotEmpty && user != null) {
+                      await FirebaseFirestore.instance
+                          .collection('users')
+                          .doc(user.uid)
+                          .update({'name': newName});
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Name updated successfully!')),
+                      );
+                      setState(() {}); // Refresh the profile page
+                      Navigator.pop(context);
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Name cannot be empty!')),
+                      );
+                    }
+                  },
+                  child: Text('Save'),
+                ),
+              ],
+            ),
           ),
         ),
       ),
