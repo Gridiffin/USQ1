@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../services/authservice.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'loginscreen.dart'; // Import the LoginScreen file
@@ -12,7 +13,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  final _nameController = TextEditingController();
+  final _matricIdController = TextEditingController();
   final AuthService _authService = AuthService();
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   String? _errorMessage;
 
@@ -20,6 +24,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() {
       _errorMessage = null;
     });
+
+    if (!_emailController.text.trim().endsWith("unimas.my")) {
+      setState(() {
+        _errorMessage = "Only emails ending with '@unimas.my' are allowed.";
+      });
+      return;
+    }
 
     if (_passwordController.text != _confirmPasswordController.text) {
       setState(() {
@@ -32,6 +43,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
       User? user = await _authService.registerWithEmailAndPassword(
           _emailController.text.trim(), _passwordController.text.trim());
       if (user != null) {
+        // Save additional user data to Firestore
+        await _firestore.collection('users').doc(user.uid).set({
+          'name': _nameController.text.trim(),
+          'matricId': _matricIdController.text.trim(),
+          'email': user.email,
+          'createdAt': Timestamp.now(),
+        });
+
         await _authService.sendEmailVerification(user);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Verification email sent!')),
@@ -77,6 +96,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 SizedBox(height: 20),
                 TextField(
+                  controller: _nameController,
+                  decoration: InputDecoration(
+                    labelText: 'Full Name',
+                    prefixIcon: Icon(Icons.person),
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                SizedBox(height: 10),
+                TextField(
+                  controller: _matricIdController,
+                  decoration: InputDecoration(
+                    labelText: 'Matric ID',
+                    prefixIcon: Icon(Icons.school),
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                SizedBox(height: 10),
+                TextField(
                   controller: _emailController,
                   decoration: InputDecoration(
                     labelText: 'E-mail',
@@ -108,7 +145,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ElevatedButton(
                   onPressed: _register,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.greenAccent, // Red button color
+                    backgroundColor: Colors.greenAccent,
                     padding: EdgeInsets.symmetric(vertical: 16.0),
                   ),
                   child: Text(
