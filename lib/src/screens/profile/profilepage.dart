@@ -172,7 +172,7 @@ class ProfilePage extends StatelessWidget {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => UploadServicePage(),
+        builder: (context) => UploadServiceScreen(),
       ),
     );
   }
