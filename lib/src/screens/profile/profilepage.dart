@@ -3,10 +3,14 @@ import 'package:flutter/material.dart';
 import 'uploadservice.dart';
 import 'changepassword.dart';
 import '../auth/loginscreen.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // Firebase Auth import
+import 'package:cloud_firestore/cloud_firestore.dart'; // Firestore import
 
 class ProfilePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final User? user = FirebaseAuth.instance.currentUser;
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Profile'),
@@ -14,96 +18,106 @@ class ProfilePage extends StatelessWidget {
           IconButton(
             icon: Icon(Icons.edit),
             onPressed: () {
-              // Navigate to edit profile screen
               _navigateToEditProfile(context);
             },
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Profile Header
-            Center(
-              child: Column(
-                children: [
-                  CircleAvatar(
-                    radius: 50,
-                    backgroundImage: AssetImage(
-                        'assets/images/profile_pic.png'), // Add a profile picture asset
-                  ),
-                  SizedBox(height: 10),
-                  Text(
-                    'John Doe', // Example user name
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                  ),
-                  SizedBox(height: 5),
-                  Text(
-                    'john.doe@example.com', // Example user email
-                    style: TextStyle(fontSize: 16, color: Colors.grey),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(height: 20),
+      body: FutureBuilder<DocumentSnapshot>(
+        future:
+            FirebaseFirestore.instance.collection('users').doc(user?.uid).get(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
+          }
 
-            // Profile Options
-            ListTile(
-              leading: Icon(Icons.shopping_bag, color: Colors.green),
-              title: Text('My Orders'),
-              onTap: () {
-                // Navigate to orders screen
-                _navigateToOrders(context);
-              },
-            ),
-            Divider(),
-            ListTile(
-              leading: Icon(Icons.settings, color: Colors.green),
-              title: Text('Settings'),
-              onTap: () {
-                // Navigate to settings screen
-                _navigateToSettings(context);
-              },
-            ),
-            Divider(),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          if (!snapshot.hasData || !snapshot.data!.exists) {
+            return Center(child: Text('No user data found.'));
+          }
+
+          final userData = snapshot.data!.data() as Map<String, dynamic>;
+          final String userName = userData['name'] ?? 'Anonymous';
+          final String userEmail = user?.email ?? 'No Email';
+
+          return Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                TextButton(
-                  onPressed: () {
-                    // Navigate to upload service screen
-                    _navigateToUploadService(context);
-                  },
-                  child: Text(
-                    'Upload Service',
-                    style: TextStyle(color: Colors.green),
+                Center(
+                  child: Column(
+                    children: [
+                      CircleAvatar(
+                        radius: 50,
+                        backgroundImage:
+                            AssetImage('assets/images/profile_pic.png'),
+                      ),
+                      SizedBox(height: 10),
+                      Text(
+                        userName,
+                        style: TextStyle(
+                            fontSize: 24, fontWeight: FontWeight.bold),
+                      ),
+                      SizedBox(height: 5),
+                      Text(
+                        userEmail,
+                        style: TextStyle(fontSize: 16, color: Colors.grey),
+                      ),
+                    ],
                   ),
                 ),
-                TextButton(
-                  onPressed: () {
-                    // Navigate to change password screen
-                    _navigateToChangePassword(context);
+                SizedBox(height: 20),
+                ListTile(
+                  leading: Icon(Icons.shopping_bag, color: Colors.green),
+                  title: Text('My Orders'),
+                  onTap: () {
+                    _navigateToOrders(context);
                   },
-                  child: Text(
-                    'Change Password',
-                    style: TextStyle(color: Colors.green),
-                  ),
+                ),
+                Divider(),
+                ListTile(
+                  leading: Icon(Icons.settings, color: Colors.green),
+                  title: Text('Settings'),
+                  onTap: () {
+                    _navigateToSettings(context);
+                  },
+                ),
+                Divider(),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    TextButton(
+                      onPressed: () {
+                        _navigateToUploadService(context);
+                      },
+                      child: Text(
+                        'Upload Service',
+                        style: TextStyle(color: Colors.green),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        _navigateToChangePassword(context);
+                      },
+                      child: Text(
+                        'Change Password',
+                        style: TextStyle(color: Colors.green),
+                      ),
+                    ),
+                  ],
+                ),
+                Divider(),
+                ListTile(
+                  leading: Icon(Icons.logout, color: Colors.green),
+                  title: Text('Logout'),
+                  onTap: () {
+                    _handleLogout(context);
+                  },
                 ),
               ],
             ),
-            Divider(),
-            ListTile(
-              leading: Icon(Icons.logout, color: Colors.green),
-              title: Text('Logout'),
-              onTap: () {
-                // Handle logout
-                _handleLogout(context);
-              },
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
