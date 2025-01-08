@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "848836773765",
+    "project_id": "usq1-7119d",
+    "storage_bucket": "usq1-7119d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:848836773765:android:315df3e44c60d6ec2da6ec",
+        "android_client_info": {
+          "package_name": "com.unimas.sq"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDYzhSV9DxpZeWbZfsJbgTCAZRvcsXRFCA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
