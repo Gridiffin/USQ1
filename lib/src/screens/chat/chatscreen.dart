@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../../models/chatmessagemodels.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -56,8 +55,16 @@ class _ChatScreenState extends State<ChatScreen> {
         title: Text('Chats'),
       ),
       body: StreamBuilder(
-        stream: _firestore.collection('chats').snapshots(),
+        stream: _firestore
+            .collection('chats')
+            .where('participants', arrayContains: _auth.currentUser?.uid)
+            .snapshots(),
         builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
+          if (snapshot.hasError) {
+            return Center(
+              child: Text('Error loading chats: ${snapshot.error}'),
+            );
+          }
           if (!snapshot.hasData) {
             return Center(child: CircularProgressIndicator());
           }
