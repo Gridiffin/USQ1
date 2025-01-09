@@ -1,8 +1,8 @@
 // providers/serviceprovider.dart
-import 'package:flutter/material.dart';
-import '../models/servicemodels.dart';
+//import 'package:flutter/material.dart';
+//import '../models/servicemodels.dart';
 
-class ServiceProvider with ChangeNotifier {
+/*class ServiceProvider with ChangeNotifier {
   final List<ServiceModel> _services = [
     ServiceModel(
       id: '1',
@@ -25,3 +25,4 @@ class ServiceProvider with ChangeNotifier {
     notifyListeners();
   }
 }
+*/
