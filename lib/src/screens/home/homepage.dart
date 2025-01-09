@@ -163,11 +163,20 @@ class HomeContent extends StatelessWidget {
                               borderRadius: BorderRadius.vertical(
                                 top: Radius.circular(10),
                               ),
-                              child: Image.network(
-                                service.imageUrl,
-                                fit: BoxFit.cover,
-                                width: double.infinity,
-                              ),
+                              child: service.imageUrl.isNotEmpty
+                                  ? Image.network(
+                                      service.imageUrl,
+                                      fit: BoxFit.cover,
+                                      width: double.infinity,
+                                    )
+                                  : Container(
+                                      color: Colors.grey[300],
+                                      child: Icon(
+                                        Icons.image,
+                                        size: 50,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
                             ),
                           ),
                           Padding(
