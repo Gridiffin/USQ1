@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import '../../models/chatmessagemodels.dart';
 
 class ChatScreen extends StatefulWidget {
   @override
@@ -124,15 +125,19 @@ class _IndividualChatScreenState extends State<IndividualChatScreen> {
     if (_messageController.text.trim().isEmpty) return;
 
     try {
+      final newMessage = ChatMessage(
+        id: '',
+        text: _messageController.text.trim(),
+        senderId: _auth.currentUser?.uid ?? '',
+        timestamp: DateTime.now(),
+      );
+
       await _firestore
           .collection('chats')
           .doc(widget.chatId)
           .collection('messages')
-          .add({
-        'text': _messageController.text.trim(),
-        'senderId': _auth.currentUser?.uid,
-        'timestamp': FieldValue.serverTimestamp(),
-      });
+          .add(newMessage.toJson());
+
       _messageController.clear();
     } catch (e) {
       print('Error sending message: $e');
@@ -159,7 +164,12 @@ class _IndividualChatScreenState extends State<IndividualChatScreen> {
                 if (!snapshot.hasData) {
                   return Center(child: CircularProgressIndicator());
                 }
-                final messages = snapshot.data!.docs;
+
+                final messages = snapshot.data!.docs.map((doc) {
+                  return ChatMessage.fromJson(
+                      doc.id, doc.data() as Map<String, dynamic>);
+                }).toList();
+
                 if (messages.isEmpty) {
                   return Center(
                     child: Text(
@@ -168,12 +178,13 @@ class _IndividualChatScreenState extends State<IndividualChatScreen> {
                     ),
                   );
                 }
+
                 return ListView.builder(
                   reverse: true,
                   itemCount: messages.length,
                   itemBuilder: (context, index) {
                     final message = messages[index];
-                    final isMe = message['senderId'] == _auth.currentUser?.uid;
+                    final isMe = message.senderId == _auth.currentUser?.uid;
                     return Align(
                       alignment:
                           isMe ? Alignment.centerRight : Alignment.centerLeft,
@@ -186,7 +197,7 @@ class _IndividualChatScreenState extends State<IndividualChatScreen> {
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
-                          message['text'],
+                          message.text,
                           style: TextStyle(
                             color: isMe ? Colors.white : Colors.black,
                           ),
