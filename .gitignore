@@ -12,6 +12,7 @@
 .swiftpm/
 migrate_working_dir/
 lib\src\usq1-7119d-firebase-adminsdk-x5d5q-4c46557fb0.json
+.env
 
 # IntelliJ related
 *.iml
