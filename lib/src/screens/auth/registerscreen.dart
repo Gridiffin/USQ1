@@ -216,7 +216,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   SizedBox(height: 10),
                   Text(
                     _errorMessage!,
-                    style: TextStyle(color: Colors.red),
+                    style: TextStyle(color: Colors.black),
                   ),
                 ]
               ],

@@ -3,9 +3,10 @@ import 'package:flutter/material.dart';
 import 'uploadservice.dart';
 import 'changepassword.dart';
 import '../auth/loginscreen.dart';
-import 'settings.dart'; // Import settings.dart
-import 'package:firebase_auth/firebase_auth.dart'; // Firebase Auth import
-import 'package:cloud_firestore/cloud_firestore.dart'; // Firestore import
+import 'settings.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:io';
 
 class ProfilePage extends StatefulWidget {
   @override
@@ -14,6 +15,7 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> {
   String userName = 'Anonymous';
+  String? userProfileImage;
 
   @override
   Widget build(BuildContext context) {
@@ -37,6 +39,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
           final userData = snapshot.data!.data() as Map<String, dynamic>;
           userName = userData['name'] ?? 'Anonymous';
+          userProfileImage = userData['imageUrl'];
           final String userEmail = user?.email ?? 'No Email';
 
           return Padding(
@@ -49,8 +52,10 @@ class _ProfilePageState extends State<ProfilePage> {
                     children: [
                       CircleAvatar(
                         radius: 50,
-                        backgroundImage:
-                            AssetImage('assets/images/profile_pic.png'),
+                        backgroundImage: userProfileImage != null
+                            ? FileImage(File(userProfileImage!))
+                            : AssetImage('assets/images/profile_pic.png')
+                                as ImageProvider,
                       ),
                       SizedBox(height: 10),
                       Text(
@@ -71,16 +76,18 @@ class _ProfilePageState extends State<ProfilePage> {
                   leading: Icon(Icons.settings, color: Colors.green),
                   title: Text('Settings'),
                   onTap: () async {
-                    final newName = await Navigator.push(
+                    final result = await Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (context) =>
                             SettingsPage(user: user, currentName: userName),
                       ),
                     );
-                    if (newName != null && newName is String) {
+                    if (result != null && result is Map<String, dynamic>) {
                       setState(() {
-                        userName = newName;
+                        userName = result['name'] ?? userName;
+                        userProfileImage =
+                            result['imageUrl'] ?? userProfileImage;
                       });
                     }
                   },
@@ -125,7 +132,6 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  // Navigate to upload service screen
   void _navigateToUploadService(BuildContext context) {
     Navigator.push(
       context,
@@ -135,7 +141,6 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  // Navigate to change password screen
   void _navigateToChangePassword(BuildContext context) {
     Navigator.push(
       context,
@@ -145,7 +150,6 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  // Handle logout (placeholder)
   void _handleLogout(BuildContext context) {
     // Perform logout actions (e.g., clear user data, navigate to login screen)
     ScaffoldMessenger.of(context).showSnackBar(

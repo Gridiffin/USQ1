@@ -116,7 +116,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   SizedBox(height: 10),
                   Text(
                     _errorMessage!,
-                    style: TextStyle(color: Colors.greenAccent),
+                    style: TextStyle(color: Colors.black),
                     textAlign: TextAlign.center,
                   ),
                 ],
