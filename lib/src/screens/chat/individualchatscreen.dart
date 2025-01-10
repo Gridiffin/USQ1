@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../../models/chatmessagemodels.dart';
 
 class IndividualChatScreen extends StatefulWidget {
   final String chatId;
@@ -12,36 +14,40 @@ class IndividualChatScreen extends StatefulWidget {
 }
 
 class _IndividualChatScreenState extends State<IndividualChatScreen> {
-  final _messageController = TextEditingController();
-  final _firestore = FirebaseFirestore.instance;
+  final TextEditingController _messageController = TextEditingController();
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  void _sendMessage(String matricId) async {
+  void _sendMessage() async {
     if (_messageController.text.trim().isEmpty) return;
 
-    final message = {
-      'text': _messageController.text.trim(),
-      'senderMatricId': matricId,
-      'timestamp': Timestamp.now(),
-    };
+    final senderMatricId = _auth.currentUser?.email?.split('@')[0] ??
+        ''; // Assume matricId is derived from email
+
+    final newMessage = ChatMessage(
+      id: '',
+      text: _messageController.text.trim(),
+      senderMatricId: senderMatricId,
+      timestamp: DateTime.now(),
+    );
 
     await _firestore
         .collection('chats')
         .doc(widget.chatId)
         .collection('messages')
-        .add(message);
+        .add(newMessage.toJson());
+    await _firestore.collection('chats').doc(widget.chatId).update({
+      'lastMessage': newMessage.text,
+      'timestamp': Timestamp.fromDate(newMessage.timestamp),
+    });
 
     _messageController.clear();
-
-    await _firestore.collection('chats').doc(widget.chatId).update({
-      'lastMessage': message['text'],
-      'timestamp': message['timestamp'],
-    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final currentMatricId =
-        "current_user_matric_id"; // Replace with actual logic
+    final currentUserMatricId = _auth.currentUser?.email?.split('@')[0] ??
+        ''; // Assume matricId is derived from email
 
     return Scaffold(
       appBar: AppBar(
@@ -62,18 +68,17 @@ class _IndividualChatScreenState extends State<IndividualChatScreen> {
                   return Center(child: CircularProgressIndicator());
                 }
 
-                final messages = snapshot.data!.docs;
-
-                if (messages.isEmpty) {
-                  return Center(child: Text('No messages yet.'));
-                }
+                final messages = snapshot.data!.docs.map((doc) {
+                  return ChatMessage.fromJson(
+                      doc.id, doc.data() as Map<String, dynamic>);
+                }).toList();
 
                 return ListView.builder(
                   reverse: true,
                   itemCount: messages.length,
                   itemBuilder: (context, index) {
                     final message = messages[index];
-                    final isMe = message['senderMatricId'] == currentMatricId;
+                    final isMe = message.senderMatricId == currentUserMatricId;
 
                     return Align(
                       alignment:
@@ -86,7 +91,7 @@ class _IndividualChatScreenState extends State<IndividualChatScreen> {
                           color: isMe ? Colors.blue : Colors.grey[300],
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: Text(message['text']),
+                        child: Text(message.text),
                       ),
                     );
                   },
@@ -111,7 +116,7 @@ class _IndividualChatScreenState extends State<IndividualChatScreen> {
                 ),
                 IconButton(
                   icon: Icon(Icons.send),
-                  onPressed: () => _sendMessage(currentMatricId),
+                  onPressed: _sendMessage,
                 ),
               ],
             ),

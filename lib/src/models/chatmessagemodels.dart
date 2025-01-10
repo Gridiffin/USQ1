@@ -3,31 +3,31 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class ChatMessage {
   final String id;
   final String text;
-  final String senderId;
+  final String senderMatricId;
   final DateTime timestamp;
 
   ChatMessage({
     required this.id,
     required this.text,
-    required this.senderId,
+    required this.senderMatricId,
     required this.timestamp,
   });
 
-  // Convert a Firestore document to a ChatMessage instance
+  // Convert Firestore document to ChatMessage
   factory ChatMessage.fromJson(String id, Map<String, dynamic> json) {
     return ChatMessage(
       id: id,
       text: json['text'] ?? '',
-      senderId: json['senderId'] ?? '',
+      senderMatricId: json['senderMatricId'] ?? '',
       timestamp: (json['timestamp'] as Timestamp).toDate(),
     );
   }
 
-  // Convert a ChatMessage instance to a Firestore-compatible map
+  // Convert ChatMessage to Firestore-compatible map
   Map<String, dynamic> toJson() {
     return {
       'text': text,
-      'senderId': senderId,
+      'senderMatricId': senderMatricId,
       'timestamp': timestamp,
     };
   }
