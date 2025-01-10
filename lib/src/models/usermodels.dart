@@ -1,26 +1,35 @@
-// models/usermodel.dart
 class UserModel {
-  final String id;
-  final String name;
-  final String email;
+  final String uid; // User's Firebase UID
+  final String name; // Display name of the user
+  final String email; // User's email address
+  final String matricId; // User's unique matric ID
+  final String imageUrl; // Profile picture URL
 
-  UserModel({required this.id, required this.name, required this.email});
+  UserModel({
+    required this.uid,
+    required this.name,
+    required this.email,
+    required this.matricId,
+    required this.imageUrl,
+  });
 
-  // Convert a JSON map to a UserModel instance
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
-      id: json['id'],
-      name: json['name'],
-      email: json['email'],
+      uid: json['uid'] ?? '',
+      name: json['name'] ?? 'Unknown',
+      email: json['email'] ?? '',
+      matricId: json['matricId'] ?? '',
+      imageUrl: json['imageUrl'] ?? '',
     );
   }
 
-  // Convert a UserModel instance to a JSON map
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
+      'uid': uid,
       'name': name,
       'email': email,
+      'matricId': matricId,
+      'imageUrl': imageUrl,
     };
   }
 }

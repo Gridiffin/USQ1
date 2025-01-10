@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import '../../models/chatmessagemodels.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -12,41 +11,6 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
-
-  @override
-  void initState() {
-    super.initState();
-    _setupPushNotifications();
-  }
-
-  void _setupPushNotifications() async {
-    NotificationSettings settings = await _firebaseMessaging.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-    );
-
-    if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-      String? token = await _firebaseMessaging.getToken();
-      if (token != null && _auth.currentUser != null) {
-        await _firestore
-            .collection('users')
-            .doc(_auth.currentUser!.uid)
-            .update({
-          'fcmToken': token,
-        });
-      }
-
-      FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-        if (message.notification != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(message.notification!.body!)),
-          );
-        }
-      });
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -81,14 +45,30 @@ class _ChatScreenState extends State<ChatScreen> {
             itemCount: chats.length,
             itemBuilder: (context, index) {
               final chat = chats[index];
-              return ListTile(
-                leading: CircleAvatar(
-                  child: Text(chat['name'][0]),
-                ),
-                title: Text(chat['name']),
-                subtitle: Text(chat['lastMessage'] ?? ''),
-                onTap: () {
-                  _openChat(context, chat.id, chat['name']);
+              final otherParticipant = (chat['participants'] as List)
+                  .firstWhere((id) => id != _auth.currentUser!.uid);
+
+              return FutureBuilder(
+                future:
+                    _firestore.collection('users').doc(otherParticipant).get(),
+                builder:
+                    (context, AsyncSnapshot<DocumentSnapshot> userSnapshot) {
+                  if (!userSnapshot.hasData) {
+                    return SizedBox.shrink();
+                  }
+
+                  final userData =
+                      userSnapshot.data!.data() as Map<String, dynamic>;
+
+                  return ListTile(
+                    leading: CircleAvatar(
+                      backgroundImage:
+                          NetworkImage(userData['profileImageUrl'] ?? ''),
+                    ),
+                    title: Text(userData['name']),
+                    subtitle: Text(chat['lastMessage']),
+                    onTap: () => _openChat(context, chat.id, userData['name']),
+                  );
                 },
               );
             },
@@ -159,6 +139,7 @@ class _IndividualChatScreenState extends State<IndividualChatScreen> {
       ),
       body: Column(
         children: [
+          // Message List
           Expanded(
             child: StreamBuilder(
               stream: _firestore
@@ -172,10 +153,7 @@ class _IndividualChatScreenState extends State<IndividualChatScreen> {
                   return Center(child: CircularProgressIndicator());
                 }
 
-                final messages = snapshot.data!.docs.map((doc) {
-                  return ChatMessage.fromJson(
-                      doc.id, doc.data() as Map<String, dynamic>);
-                }).toList();
+                final messages = snapshot.data!.docs;
 
                 if (messages.isEmpty) {
                   return Center(
@@ -190,8 +168,9 @@ class _IndividualChatScreenState extends State<IndividualChatScreen> {
                   reverse: true,
                   itemCount: messages.length,
                   itemBuilder: (context, index) {
-                    final message = messages[index];
-                    final isMe = message.senderId == _auth.currentUser?.uid;
+                    final message =
+                        messages[index].data() as Map<String, dynamic>;
+                    final isMe = message['senderId'] == _auth.currentUser?.uid;
                     return Align(
                       alignment:
                           isMe ? Alignment.centerRight : Alignment.centerLeft,
@@ -204,7 +183,7 @@ class _IndividualChatScreenState extends State<IndividualChatScreen> {
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
-                          message.text,
+                          message['text'],
                           style: TextStyle(
                             color: isMe ? Colors.white : Colors.black,
                           ),
@@ -216,8 +195,11 @@ class _IndividualChatScreenState extends State<IndividualChatScreen> {
               },
             ),
           ),
-          Padding(
+          // Message Input Field
+          Container(
             padding: const EdgeInsets.all(8.0),
+            color:
+                Colors.white, // Ensure the input field has a visible background
             child: Row(
               children: [
                 Expanded(
@@ -231,8 +213,9 @@ class _IndividualChatScreenState extends State<IndividualChatScreen> {
                     ),
                   ),
                 ),
+                SizedBox(width: 8),
                 IconButton(
-                  icon: Icon(Icons.send),
+                  icon: Icon(Icons.send, color: Colors.blue),
                   onPressed: _sendMessage,
                 ),
               ],
