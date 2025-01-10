@@ -175,8 +175,24 @@ class _ServiceTileState extends State<ServiceTile> {
 
     if (docSnapshot.exists) {
       await userFavoritesRef.delete();
+
+      // Remove the service from lovedServices
+      await _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('lovedServices')
+          .doc(widget.service.id)
+          .delete();
     } else {
       await userFavoritesRef.set(widget.service.toJson());
+
+      // Add the service to lovedServices
+      await _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('lovedServices')
+          .doc(widget.service.id)
+          .set(widget.service.toJson());
     }
   }
 
@@ -195,47 +211,33 @@ class _ServiceTileState extends State<ServiceTile> {
         final isLoved = snapshot.hasData && snapshot.data!.exists;
 
         return Card(
-          elevation: 4,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.vertical(
-                    top: Radius.circular(10),
-                  ),
-                  child: widget.service.imagePath.isNotEmpty
-                      ? Image.file(
-                          File(widget.service.imagePath),
-                          fit: BoxFit.cover,
-                          width: double.infinity,
-                        )
-                      : Container(
-                          color: Colors.grey[300],
-                          child: Icon(
-                            Icons.image,
-                            size: 50,
-                            color: Colors.grey,
-                          ),
+                child: widget.service.imagePath.isNotEmpty
+                    ? (widget.service.imagePath.startsWith('http')
+                        ? Image.network(
+                            widget.service.imagePath,
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                          )
+                        : Image.file(
+                            File(widget.service.imagePath),
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                          ))
+                    : Container(
+                        color: Colors.grey[300],
+                        child: Icon(
+                          Icons.image,
+                          size: 50,
+                          color: Colors.grey,
                         ),
-                ),
+                      ),
               ),
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Text(
-                  widget.service.title,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                child: StreamBuilder(
+              ListTile(
+                title: Text(widget.service.title),
+                subtitle: StreamBuilder(
                   stream: _firestore
                       .collection('services')
                       .doc(widget.service.id)
@@ -246,7 +248,7 @@ class _ServiceTileState extends State<ServiceTile> {
                         ratingSnapshot.data!.docs.isEmpty) {
                       return Text(
                         'No ratings yet',
-                        style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                        style: TextStyle(color: Colors.grey[600]),
                       );
                     }
 
@@ -259,16 +261,13 @@ class _ServiceTileState extends State<ServiceTile> {
                     return Text(
                       'Rating: ${averageRating.toStringAsFixed(1)}',
                       style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.orange,
-                          fontSize: 14),
+                        fontWeight: FontWeight.bold,
+                        color: Colors.orange,
+                      ),
                     );
                   },
                 ),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                child: IconButton(
+                trailing: IconButton(
                   icon: Icon(
                     isLoved ? Icons.favorite : Icons.favorite_border,
                     color: isLoved ? Colors.red : null,

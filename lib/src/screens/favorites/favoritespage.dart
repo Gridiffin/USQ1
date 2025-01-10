@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:io';
 
 class FavoritesPage extends StatelessWidget {
   @override
@@ -74,8 +75,21 @@ class FavoritesPage extends StatelessWidget {
                   return Card(
                     child: ListTile(
                       leading: serviceData['imagePath'] != null
-                          ? Image.network(serviceData['imagePath'],
-                              width: 50, height: 50)
+                          ? (serviceData['imagePath']
+                                  .toString()
+                                  .startsWith('http')
+                              ? Image.network(
+                                  serviceData['imagePath'],
+                                  width: 50,
+                                  height: 50,
+                                  fit: BoxFit.cover,
+                                )
+                              : Image.file(
+                                  File(serviceData['imagePath']),
+                                  width: 50,
+                                  height: 50,
+                                  fit: BoxFit.cover,
+                                ))
                           : Icon(Icons.image, size: 50, color: Colors.grey),
                       title: Text(serviceData['title'] ?? 'Unknown Title'),
                       subtitle: Text(serviceData['description'] ??
@@ -148,8 +162,14 @@ class ServiceDetailPage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             imageUrl.isNotEmpty
-                ? Image.network(imageUrl,
-                    fit: BoxFit.cover, width: double.infinity)
+                ? (imageUrl.startsWith('http')
+                    ? Image.network(imageUrl,
+                        fit: BoxFit.cover, width: double.infinity)
+                    : Image.file(
+                        File(imageUrl),
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                      ))
                 : Container(
                     height: 200,
                     color: Colors.grey[300],
