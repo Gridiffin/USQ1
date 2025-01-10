@@ -105,6 +105,14 @@ class FavoritesPage extends StatelessWidget {
                               .doc(favoriteId)
                               .delete();
 
+                          // Remove the service from the user's lovedServices
+                          await FirebaseFirestore.instance
+                              .collection('users')
+                              .doc(userId)
+                              .collection('lovedServices')
+                              .doc(favoriteId)
+                              .delete();
+
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(content: Text('Removed from favorites')),
                           );
