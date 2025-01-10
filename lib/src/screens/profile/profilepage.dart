@@ -136,7 +136,7 @@ class _ProfilePageState extends State<ProfilePage> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => UploadServiceScreen(),
+        builder: (context) => UploadServicePage(),
       ),
     );
   }

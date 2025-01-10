@@ -1,6 +1,6 @@
-// screens/home/homepage.dart
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:io';
 import '../../models/servicemodels.dart';
 import '../profile/profilepage.dart'; // Import the ProfilePage
 import '../favorites/favoritespage.dart'; // Import the FavoritesPage
@@ -12,22 +12,19 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  int _selectedIndex =
-      0; // Track the selected index for the bottom navigation bar
-  final TextEditingController _searchController =
-      TextEditingController(); // Controller for search bar
-  String _searchQuery = ''; // Track the search query
+  int _selectedIndex = 0;
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
 
-  // Define the screens for the bottom navigation bar
   final List<Widget> _screens = [
-    HomeContent(), // Home screen content
-    FavoritesPage(), // Favorites screen
-    ProfilePage(), // Profile screen
+    HomeContent(),
+    FavoritesPage(),
+    ProfilePage(),
   ];
 
   @override
   void dispose() {
-    _searchController.dispose(); // Dispose the controller
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -36,28 +33,26 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       appBar: AppBar(
         title: Container(
-          height: 40, // Set a fixed height for the search bar
+          height: 40,
           child: TextField(
-            controller: _searchController, // Connect the controller
+            controller: _searchController,
             decoration: InputDecoration(
               hintText: 'Search...',
               border: OutlineInputBorder(),
-              prefixIcon: Icon(Icons.search), // Search icon
+              prefixIcon: Icon(Icons.search),
               suffixIcon: _searchController.text.isNotEmpty
                   ? IconButton(
                       icon: Icon(Icons.clear),
                       onPressed: () {
-                        // Clear the search text
                         _searchController.clear();
                         setState(() {
                           _searchQuery = '';
                         });
                       },
                     )
-                  : null, // Show clear button only when there's text
+                  : null,
             ),
             onChanged: (value) {
-              // Update the search query as the user types
               setState(() {
                 _searchQuery = value;
               });
@@ -65,11 +60,9 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
         actions: [
-          // Chat Button
           IconButton(
-            icon: Icon(Icons.chat, size: 30), // Chat icon
+            icon: Icon(Icons.chat, size: 30),
             onPressed: () {
-              // Navigate to chat screen
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => ChatScreen()),
@@ -79,15 +72,14 @@ class _HomePageState extends State<HomePage> {
         ],
       ),
       body: _selectedIndex == 0
-          ? HomeContent(searchQuery: _searchQuery) // Pass the search query
-          : _screens[_selectedIndex], // Display the selected screen
+          ? HomeContent(searchQuery: _searchQuery)
+          : _screens[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
         items: <BottomNavigationBarItem>[
           BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
           BottomNavigationBarItem(
-              icon: Icon(Icons.favorite), label: "Favorites"), // Favorites tab
-          BottomNavigationBarItem(
-              icon: Icon(Icons.person), label: "Profile"), // Profile tab
+              icon: Icon(Icons.favorite), label: "Favorites"),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
         ],
         currentIndex: _selectedIndex,
         selectedItemColor: Colors.blue,
@@ -97,7 +89,6 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // Handle bottom navigation bar taps
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
@@ -105,7 +96,6 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-// Home Content (moved from the original build method)
 class HomeContent extends StatelessWidget {
   final String searchQuery;
 
@@ -114,11 +104,7 @@ class HomeContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder(
-      stream: FirebaseFirestore.instance
-          .collection('services')
-          .where('title', isGreaterThanOrEqualTo: searchQuery)
-          .where('title', isLessThanOrEqualTo: searchQuery + '\uF7FF')
-          .snapshots(),
+      stream: FirebaseFirestore.instance.collection('services').snapshots(),
       builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
         if (!snapshot.hasData) {
           return Center(child: CircularProgressIndicator());
@@ -128,7 +114,12 @@ class HomeContent extends StatelessWidget {
           return ServiceModel.fromJson(doc.data() as Map<String, dynamic>);
         }).toList();
 
-        return services.isEmpty
+        final filteredServices = services
+            .where((service) =>
+                service.title.toLowerCase().contains(searchQuery.toLowerCase()))
+            .toList();
+
+        return filteredServices.isEmpty
             ? Center(
                 child: Text(
                   'No services found',
@@ -142,12 +133,11 @@ class HomeContent extends StatelessWidget {
                   crossAxisSpacing: 8.0,
                   mainAxisSpacing: 8.0,
                 ),
-                itemCount: services.length,
+                itemCount: filteredServices.length,
                 itemBuilder: (context, index) {
-                  final service = services[index];
+                  final service = filteredServices[index];
                   return GestureDetector(
                     onTap: () {
-                      // Navigate to a detailed view of the service
                       _showServiceDetails(context, service);
                     },
                     child: Card(
@@ -163,9 +153,9 @@ class HomeContent extends StatelessWidget {
                               borderRadius: BorderRadius.vertical(
                                 top: Radius.circular(10),
                               ),
-                              child: service.imageUrl.isNotEmpty
-                                  ? Image.network(
-                                      service.imageUrl,
+                              child: service.imagePath.isNotEmpty
+                                  ? Image.file(
+                                      File(service.imagePath),
                                       fit: BoxFit.cover,
                                       width: double.infinity,
                                     )
@@ -197,34 +187,6 @@ class HomeContent extends StatelessWidget {
                               style: TextStyle(color: Colors.grey[600]),
                             ),
                           ),
-                          Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  '\$${service.price.toStringAsFixed(2)}',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                                // Rating System (Star Rating)
-                                Row(
-                                  children: List.generate(5, (starIndex) {
-                                    return Icon(
-                                      starIndex < 4
-                                          ? Icons.star
-                                          : Icons
-                                              .star_border, // Example rating (4/5)
-                                      color: Colors.amber,
-                                      size: 16,
-                                    );
-                                  }),
-                                ),
-                              ],
-                            ),
-                          ),
                         ],
                       ),
                     ),
@@ -235,7 +197,6 @@ class HomeContent extends StatelessWidget {
     );
   }
 
-  // Show service details (including comments and rating)
   void _showServiceDetails(BuildContext context, ServiceModel service) {
     showModalBottomSheet(
       context: context,
@@ -243,41 +204,118 @@ class HomeContent extends StatelessWidget {
       builder: (context) {
         return Container(
           padding: EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                service.title,
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 10),
-              Text(service.description),
-              SizedBox(height: 20),
-              // Comment Section
-              Expanded(
-                child: ListView.builder(
-                  itemCount: 5, // Example: 5 comments
-                  itemBuilder: (context, index) {
-                    return ListTile(
-                      title: Text('User $index'),
-                      subtitle: Text('This is a sample comment.'),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (service.imagePath.isNotEmpty)
+                  Image.file(
+                    File(service.imagePath),
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                  )
+                else
+                  Container(
+                    width: double.infinity,
+                    height: 200,
+                    color: Colors.grey[300],
+                    child: Icon(
+                      Icons.image,
+                      size: 50,
+                      color: Colors.grey,
+                    ),
+                  ),
+                SizedBox(height: 10),
+                Text(
+                  service.title,
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: 5),
+                FutureBuilder<QuerySnapshot>(
+                  future: FirebaseFirestore.instance
+                      .collection('users')
+                      .where('name', isEqualTo: service.providerId)
+                      .limit(1)
+                      .get(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return Text(
+                        'Loading uploader info...',
+                        style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                      );
+                    }
+                    if (snapshot.hasError ||
+                        !snapshot.hasData ||
+                        snapshot.data!.docs.isEmpty) {
+                      return Text(
+                        'Uploader information not found',
+                        style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                      );
+                    }
+
+                    final uploaderData = snapshot.data!.docs.first.data()
+                        as Map<String, dynamic>;
+                    return Text(
+                      'Uploaded by: ${uploaderData['name'] ?? 'Unknown'}',
+                      style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                     );
                   },
                 ),
-              ),
-              // Add Comment Input
-              TextField(
-                decoration: InputDecoration(
-                  hintText: 'Add a comment...',
-                  suffixIcon: IconButton(
-                    icon: Icon(Icons.send),
-                    onPressed: () {
-                      // Handle adding a comment
-                    },
+                SizedBox(height: 10),
+                Text(
+                  service.description,
+                  style: TextStyle(fontSize: 16),
+                ),
+                SizedBox(height: 20),
+                Divider(),
+                Text(
+                  'Comments',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-              ),
-            ],
+                SizedBox(height: 10),
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: NeverScrollableScrollPhysics(),
+                  itemCount: 5,
+                  itemBuilder: (context, index) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 5.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'User $index',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          Text(
+                            'This is a sample comment.',
+                            style: TextStyle(color: Colors.grey[600]),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+                SizedBox(height: 10),
+                TextField(
+                  decoration: InputDecoration(
+                    hintText: 'Add a comment...',
+                    suffixIcon: IconButton(
+                      icon: Icon(Icons.send),
+                      onPressed: () {
+                        // Handle adding a comment
+                      },
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         );
       },
