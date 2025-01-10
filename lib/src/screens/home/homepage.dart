@@ -188,6 +188,56 @@ class HomeContent extends StatelessWidget {
                               style: TextStyle(color: Colors.grey[600]),
                             ),
                           ),
+                          StreamBuilder(
+                            stream: FirebaseFirestore.instance
+                                .collection('services')
+                                .doc(service.id)
+                                .collection('ratings')
+                                .snapshots(),
+                            builder: (context, ratingSnapshot) {
+                              if (!ratingSnapshot.hasData ||
+                                  ratingSnapshot.data!.docs.isEmpty) {
+                                return Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8.0, vertical: 4.0),
+                                  child: Text(
+                                    'No ratings yet',
+                                    style: TextStyle(
+                                        color: Colors.grey[600], fontSize: 14),
+                                  ),
+                                );
+                              }
+
+                              final ratings = ratingSnapshot.data!.docs
+                                  .map((doc) => doc['rating'] as int)
+                                  .toList();
+                              final averageRating =
+                                  ratings.reduce((a, b) => a + b) /
+                                      ratings.length;
+
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8.0, vertical: 4.0),
+                                child: Row(
+                                  children: [
+                                    Text(
+                                      'Rating: ',
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 14),
+                                    ),
+                                    Text(
+                                      averageRating.toStringAsFixed(1),
+                                      style: TextStyle(
+                                          color: Colors.orange,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
                         ],
                       ),
                     ),
