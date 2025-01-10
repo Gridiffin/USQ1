@@ -1,3 +1,2 @@
-# usq
+# UNIMAS-SIDE-QUEST
 
-A new Flutter project.
