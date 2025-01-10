@@ -5,6 +5,7 @@ import '../../models/servicemodels.dart';
 import '../profile/profilepage.dart'; // Import the ProfilePage
 import '../favorites/favoritespage.dart'; // Import the FavoritesPage
 import '../chat/chatscreen.dart'; // Import the ChatScreen
+import 'package:firebase_auth/firebase_auth.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -198,6 +199,9 @@ class HomeContent extends StatelessWidget {
   }
 
   void _showServiceDetails(BuildContext context, ServiceModel service) {
+    final TextEditingController _commentController = TextEditingController();
+    double _currentRating = 0;
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -279,40 +283,141 @@ class HomeContent extends StatelessWidget {
                   ),
                 ),
                 SizedBox(height: 10),
-                ListView.builder(
-                  shrinkWrap: true,
-                  physics: NeverScrollableScrollPhysics(),
-                  itemCount: 5,
-                  itemBuilder: (context, index) {
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 5.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'User $index',
-                            style: TextStyle(fontWeight: FontWeight.bold),
+                StreamBuilder(
+                  stream: FirebaseFirestore.instance
+                      .collection('services')
+                      .doc(service.id)
+                      .collection('comments')
+                      .snapshots(),
+                  builder: (context, snapshot) {
+                    if (!snapshot.hasData) {
+                      return CircularProgressIndicator();
+                    }
+
+                    final comments = snapshot.data!.docs;
+
+                    return ListView.builder(
+                      shrinkWrap: true,
+                      physics: NeverScrollableScrollPhysics(),
+                      itemCount: comments.length,
+                      itemBuilder: (context, index) {
+                        final comment = comments[index].data();
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 5.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              FutureBuilder<DocumentSnapshot>(
+                                future: FirebaseFirestore.instance
+                                    .collection('users')
+                                    .doc(comment['userId'])
+                                    .get(),
+                                builder: (context, userSnapshot) {
+                                  if (userSnapshot.connectionState ==
+                                      ConnectionState.waiting) {
+                                    return Text(
+                                      'Loading user info...',
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.grey),
+                                    );
+                                  }
+                                  if (userSnapshot.hasError ||
+                                      !userSnapshot.hasData ||
+                                      !userSnapshot.data!.exists) {
+                                    return Text(
+                                      'Unknown User',
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.grey),
+                                    );
+                                  }
+                                  final userData = userSnapshot.data!.data()
+                                      as Map<String, dynamic>;
+                                  final userName =
+                                      userData['name'] ?? 'Unknown';
+                                  return Text(
+                                    userName,
+                                    style:
+                                        TextStyle(fontWeight: FontWeight.bold),
+                                  );
+                                },
+                              ),
+                              Text(
+                                comment['text'] ?? '',
+                                style: TextStyle(color: Colors.grey[600]),
+                              ),
+                            ],
                           ),
-                          Text(
-                            'This is a sample comment.',
-                            style: TextStyle(color: Colors.grey[600]),
-                          ),
-                        ],
-                      ),
+                        );
+                      },
                     );
                   },
                 ),
                 SizedBox(height: 10),
                 TextField(
+                  controller: _commentController,
                   decoration: InputDecoration(
                     hintText: 'Add a comment...',
                     suffixIcon: IconButton(
                       icon: Icon(Icons.send),
                       onPressed: () {
-                        // Handle adding a comment
+                        if (_commentController.text.isNotEmpty) {
+                          FirebaseFirestore.instance
+                              .collection('services')
+                              .doc(service.id)
+                              .collection('comments')
+                              .add({
+                            'userId': FirebaseAuth.instance.currentUser!
+                                .uid, // Replace with actual user ID
+                            'text': _commentController.text,
+                          });
+                          _commentController.clear();
+                        }
                       },
                     ),
                   ),
+                ),
+                SizedBox(height: 20),
+                Divider(),
+                Text(
+                  'Rate this service',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: 10),
+                StatefulBuilder(
+                  builder: (context, setState) {
+                    return Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(5, (index) {
+                        return IconButton(
+                          icon: Icon(
+                            Icons.star,
+                            color: index < _currentRating
+                                ? Colors.yellow
+                                : Colors.grey,
+                          ),
+                          onPressed: () async {
+                            setState(() {
+                              _currentRating = index + 1;
+                            });
+                            final userId =
+                                'currentUserId'; // Replace with actual user ID
+                            final ratingRef = FirebaseFirestore.instance
+                                .collection('services')
+                                .doc(service.id)
+                                .collection('ratings')
+                                .doc(userId);
+
+                            await ratingRef.set({'rating': index + 1});
+                          },
+                        );
+                      }),
+                    );
+                  },
                 ),
               ],
             ),
