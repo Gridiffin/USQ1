@@ -454,13 +454,13 @@ class HomeContent extends StatelessWidget {
                             setState(() {
                               _currentRating = index + 1;
                             });
-                            final userId =
-                                'currentUserId'; // Replace with actual user ID
+                            final userEmail =
+                                FirebaseAuth.instance.currentUser!.email;
                             final ratingRef = FirebaseFirestore.instance
                                 .collection('services')
                                 .doc(service.id)
                                 .collection('ratings')
-                                .doc(userId);
+                                .doc(userEmail);
 
                             await ratingRef.set({'rating': index + 1});
                           },
