@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:io';
+import '../../models/servicemodels.dart';
+import 'servicedetailspage.dart';
 
 class FavoritesPage extends StatelessWidget {
   @override
@@ -80,45 +82,43 @@ class FavoritesPage extends StatelessWidget {
                     );
                   }
 
+                  final service = ServiceModel.fromJson(serviceData);
+
                   return Card(
-                    color: Colors.white,
+                    color: Colors.green.shade200,
                     shadowColor: Colors.black54,
                     elevation: 5,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10.0),
                     ),
                     child: ListTile(
-                      leading: serviceData['imagePath'] != null
-                          ? (serviceData['imagePath']
-                                  .toString()
-                                  .startsWith('http')
+                      leading: service.imagePath.isNotEmpty
+                          ? (service.imagePath.startsWith('http')
                               ? Image.network(
-                                  serviceData['imagePath'],
+                                  service.imagePath,
                                   width: 50,
                                   height: 50,
                                   fit: BoxFit.cover,
                                 )
                               : Image.file(
-                                  File(serviceData['imagePath']),
+                                  File(service.imagePath),
                                   width: 50,
                                   height: 50,
                                   fit: BoxFit.cover,
                                 ))
                           : Icon(Icons.image, size: 50, color: Colors.grey),
                       title: Text(
-                        serviceData['title'] ?? 'Unknown Title',
+                        service.title,
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
                       subtitle: Text(
-                        serviceData['description'] ??
-                            'No description available',
+                        service.description,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
                       trailing: IconButton(
                         icon: Icon(Icons.delete, color: Colors.red),
                         onPressed: () async {
-                          // Remove the service from the user's favorites
                           await FirebaseFirestore.instance
                               .collection('favorites')
                               .doc(userId)
@@ -132,17 +132,11 @@ class FavoritesPage extends StatelessWidget {
                         },
                       ),
                       onTap: () {
-                        // Navigate to the detailed service page
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => ServiceDetailPage(
-                              title: serviceData['title'] ?? 'Unknown Title',
-                              description: serviceData['description'] ??
-                                  'No description available',
-                              price: serviceData['price']?.toDouble() ?? 0.0,
-                              imageUrl: serviceData['imagePath'] ?? '',
-                            ),
+                            builder: (context) =>
+                                ServiceDetailsPage(service: service),
                           ),
                         );
                       },
@@ -153,65 +147,6 @@ class FavoritesPage extends StatelessWidget {
             },
           );
         },
-      ),
-    );
-  }
-}
-
-class ServiceDetailPage extends StatelessWidget {
-  final String title;
-  final String description;
-  final double price;
-  final String imageUrl;
-
-  ServiceDetailPage({
-    required this.title,
-    required this.description,
-    required this.price,
-    required this.imageUrl,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(title, style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: Color(0xFF558B2F),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            imageUrl.isNotEmpty
-                ? (imageUrl.startsWith('http')
-                    ? Image.network(imageUrl,
-                        fit: BoxFit.cover, width: double.infinity)
-                    : Image.file(
-                        File(imageUrl),
-                        fit: BoxFit.cover,
-                        width: double.infinity,
-                      ))
-                : Container(
-                    height: 200,
-                    color: Colors.grey[300],
-                    child: Icon(Icons.image, size: 100, color: Colors.grey),
-                  ),
-            SizedBox(height: 16),
-            Text(
-              title,
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 8),
-            Text(description,
-                style: TextStyle(fontSize: 16, color: Colors.grey[600])),
-            SizedBox(height: 16),
-            Text(
-              '\$${price.toStringAsFixed(2)}',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-          ],
-        ),
       ),
     );
   }

@@ -1,3 +1,4 @@
+// Simplified homepage.dart retaining search icon toggle for search bar
 import 'package:flutter/material.dart';
 import '../profile/profilepage.dart'; // Import the ProfilePage
 import '../favorites/favoritespage.dart'; // Import the FavoritesPage
@@ -15,6 +16,7 @@ class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  bool _showSearchBar = false;
   bool _showUserResults = false;
 
   final List<Widget> _screens = [
@@ -33,38 +35,60 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: SizedBox(
-          height: 40,
-          child: TextField(
-            controller: _searchController,
-            decoration: InputDecoration(
-              hintText: 'Search services or users...',
-              border: OutlineInputBorder(),
-              prefixIcon: Icon(Icons.search),
-              suffixIcon: _searchController.text.isNotEmpty
-                  ? IconButton(
-                      icon: Icon(Icons.clear),
-                      onPressed: () {
-                        _searchController.clear();
+        backgroundColor: Colors.green.shade700,
+        title: _selectedIndex != 2
+            ? (_showSearchBar
+                ? Container(
+                    decoration: BoxDecoration(
+                      color: Colors.green.shade200,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: TextField(
+                      controller: _searchController,
+                      decoration: InputDecoration(
+                        hintText: 'Search services or users...',
+                        hintStyle: TextStyle(
+                          height: 1.5, // Aligns text vertically with icon
+                          color: Colors.green.shade900,
+                        ),
+                        border: InputBorder.none,
+                        prefixIcon:
+                            Icon(Icons.search, color: Colors.green.shade900),
+                        suffixIcon: IconButton(
+                          icon: Icon(Icons.clear, color: Colors.green.shade900),
+                          onPressed: () {
+                            _searchController.clear();
+                            setState(() {
+                              _searchQuery = '';
+                              _showUserResults = false;
+                              _showSearchBar = false;
+                            });
+                          },
+                        ),
+                      ),
+                      onChanged: (value) {
                         setState(() {
-                          _searchQuery = '';
-                          _showUserResults = false;
+                          _searchQuery = value.toLowerCase();
+                          _showUserResults = value.isNotEmpty;
                         });
                       },
-                    )
-                  : null,
-            ),
-            onChanged: (value) {
-              setState(() {
-                _searchQuery = value.toLowerCase();
-                _showUserResults = value.isNotEmpty;
-              });
-            },
-          ),
-        ),
+                    ),
+                  )
+                : Text('Side Quest',
+                    style: TextStyle(color: Colors.green.shade100)))
+            : Text('Profile', style: TextStyle(color: Colors.green.shade100)),
         actions: [
+          if (_selectedIndex != 2 && !_showSearchBar)
+            IconButton(
+              icon: Icon(Icons.search, size: 30, color: Colors.green.shade900),
+              onPressed: () {
+                setState(() {
+                  _showSearchBar = true;
+                });
+              },
+            ),
           IconButton(
-            icon: Icon(Icons.chat, size: 30),
+            icon: Icon(Icons.chat, size: 30, color: Colors.green.shade900),
             onPressed: () {
               Navigator.push(
                 context,
@@ -85,7 +109,7 @@ class _HomePageState extends State<HomePage> {
                     padding: const EdgeInsets.all(8.0),
                     child: UserSearchResults(searchQuery: _searchQuery),
                   ),
-                Divider(),
+                Divider(color: Colors.green.shade900),
                 Expanded(
                   // Use Expanded to give HomeContent the remaining space
                   child: Padding(
@@ -96,6 +120,7 @@ class _HomePageState extends State<HomePage> {
               ],
             ),
       bottomNavigationBar: BottomNavigationBar(
+        backgroundColor: Colors.green.shade100,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
           BottomNavigationBarItem(
@@ -103,8 +128,8 @@ class _HomePageState extends State<HomePage> {
           BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
         ],
         currentIndex: _selectedIndex,
-        selectedItemColor: Colors.blue,
-        unselectedItemColor: Colors.grey,
+        selectedItemColor: Colors.green.shade900,
+        unselectedItemColor: Colors.green.shade600,
         onTap: _onItemTapped,
       ),
     );
@@ -141,7 +166,7 @@ class UserSearchResults extends StatelessWidget {
           return Center(
             child: Text(
               'No users found',
-              style: TextStyle(fontSize: 18, color: Colors.grey),
+              style: TextStyle(fontSize: 18, color: Colors.brown),
             ),
           );
         }
@@ -157,8 +182,12 @@ class UserSearchResults extends StatelessWidget {
                     : const AssetImage('assets/images/profile_pic.png')
                         as ImageProvider,
               ),
-              title: Text(user['name'] ?? 'Unknown User'),
-              subtitle: Text(user['email'] ?? 'No Email'),
+              title: Text(
+                user['name'] ?? 'Unknown User',
+                style: TextStyle(color: Colors.green.shade900),
+              ),
+              subtitle: Text(user['email'] ?? 'No Email',
+                  style: TextStyle(color: Colors.green.shade700)),
               onTap: () {
                 Navigator.push(
                   context,

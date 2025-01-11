@@ -1,3 +1,4 @@
+// Updated servicetile.dart to reinforce background color
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -29,66 +30,69 @@ class _ServiceTileState extends State<ServiceTile> {
 
     if (docSnapshot.exists) {
       await userFavoritesRef.delete();
-
-      await _firestore
-          .collection('users')
-          .doc(userId)
-          .collection('lovedServices')
-          .doc(widget.service.id)
-          .delete();
     } else {
       await userFavoritesRef.set(widget.service.toJson());
-
-      await _firestore
-          .collection('users')
-          .doc(userId)
-          .collection('lovedServices')
-          .doc(widget.service.id)
-          .set(widget.service.toJson());
     }
+  }
+
+  Future<double> _getAverageRating() async {
+    final ratingsSnapshot = await _firestore
+        .collection('services')
+        .doc(widget.service.id)
+        .collection('ratings')
+        .get();
+
+    if (ratingsSnapshot.docs.isEmpty) return 0;
+
+    final ratings =
+        ratingsSnapshot.docs.map((doc) => doc['rating'] as int).toList();
+    final averageRating = ratings.reduce((a, b) => a + b) / ratings.length;
+    return averageRating;
   }
 
   @override
   Widget build(BuildContext context) {
-    final userId = _auth.currentUser!.uid;
-
-    return StreamBuilder<DocumentSnapshot>(
-      stream: _firestore
-          .collection('users')
-          .doc(userId)
-          .collection('lovedServices')
-          .doc(widget.service.id)
-          .snapshots(),
+    return FutureBuilder<double>(
+      future: _getAverageRating(),
       builder: (context, snapshot) {
-        final isLoved = snapshot.hasData && snapshot.data!.exists;
+        final averageRating = snapshot.data ?? 0;
 
         return Card(
-          elevation: 2, // Add elevation for better visual appearance
+          elevation: 4,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          color: Colors.green.shade200, // Ensures the jungle-green background
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // Image Section
               Expanded(
-                child: widget.service.imagePath.isNotEmpty
-                    ? (widget.service.imagePath.startsWith('http')
-                        ? Image.network(
-                            widget.service.imagePath,
-                            fit: BoxFit.cover,
-                            width: double.infinity,
-                          )
-                        : Image.file(
-                            File(widget.service.imagePath),
-                            fit: BoxFit.cover,
-                            width: double.infinity,
-                          ))
-                    : Container(
-                        color: Colors.grey[300],
-                        child: Icon(
-                          Icons.image,
-                          size: 50,
-                          color: Colors.grey,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+                  child: widget.service.imagePath.isNotEmpty
+                      ? (widget.service.imagePath.startsWith('http')
+                          ? Image.network(
+                              widget.service.imagePath,
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                            )
+                          : Image.file(
+                              File(widget.service.imagePath),
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                            ))
+                      : Container(
+                          decoration: BoxDecoration(
+                            color: Colors.green.shade300,
+                          ),
+                          child: Icon(
+                            Icons.image,
+                            size: 50,
+                            color: Colors.green.shade800,
+                          ),
                         ),
-                      ),
+                ),
               ),
               // Title, Rating, and Love Button Section
               Padding(
@@ -101,38 +105,18 @@ class _ServiceTileState extends State<ServiceTile> {
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
+                        color: Colors.brown,
                       ),
                     ),
                     SizedBox(height: 4),
-                    StreamBuilder(
-                      stream: _firestore
-                          .collection('services')
-                          .doc(widget.service.id)
-                          .collection('ratings')
-                          .snapshots(),
-                      builder: (context, ratingSnapshot) {
-                        if (!ratingSnapshot.hasData ||
-                            ratingSnapshot.data!.docs.isEmpty) {
-                          return Text(
-                            'No ratings yet',
-                            style: TextStyle(color: Colors.grey[600]),
-                          );
-                        }
-
-                        final ratings = ratingSnapshot.data!.docs
-                            .map((doc) => doc['rating'] as int)
-                            .toList();
-                        final averageRating =
-                            ratings.reduce((a, b) => a + b) / ratings.length;
-
-                        return Text(
-                          'Rating: ${averageRating.toStringAsFixed(1)}',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.orange,
-                          ),
-                        );
-                      },
+                    Text(
+                      averageRating > 0
+                          ? 'Rating: ${averageRating.toStringAsFixed(1)}'
+                          : 'No ratings yet',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.orange,
+                      ),
                     ),
                   ],
                 ),
@@ -140,12 +124,24 @@ class _ServiceTileState extends State<ServiceTile> {
               // Love Button
               Align(
                 alignment: Alignment.centerRight,
-                child: IconButton(
-                  icon: Icon(
-                    isLoved ? Icons.favorite : Icons.favorite_border,
-                    color: isLoved ? Colors.red : Colors.grey,
-                  ),
-                  onPressed: _toggleLove,
+                child: StreamBuilder<DocumentSnapshot>(
+                  stream: _firestore
+                      .collection('favorites')
+                      .doc(_auth.currentUser!.uid)
+                      .collection('userFavorites')
+                      .doc(widget.service.id)
+                      .snapshots(),
+                  builder: (context, snapshot) {
+                    final isLoved = snapshot.hasData && snapshot.data!.exists;
+
+                    return IconButton(
+                      icon: Icon(
+                        isLoved ? Icons.favorite : Icons.favorite_border,
+                        color: isLoved ? Colors.red : Colors.brown,
+                      ),
+                      onPressed: _toggleLove,
+                    );
+                  },
                 ),
               ),
             ],
