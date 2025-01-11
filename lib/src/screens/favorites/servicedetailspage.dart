@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'dart:io';
 import '../../models/servicemodels.dart';
 
 class ServiceDetailsPage extends StatelessWidget {
@@ -41,18 +40,12 @@ class ServiceDetailsPage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (service.imagePath.isNotEmpty)
-                    (service.imagePath.startsWith('http')
-                        ? Image.network(
-                            service.imagePath,
-                            fit: BoxFit.cover,
-                            width: double.infinity,
-                          )
-                        : Image.file(
-                            File(service.imagePath),
-                            fit: BoxFit.cover,
-                            width: double.infinity,
-                          ))
+                  if (service.imageUrl.isNotEmpty)
+                    Image.network(
+                      service.imageUrl,
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                    )
                   else
                     Container(
                       width: double.infinity,

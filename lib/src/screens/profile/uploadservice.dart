@@ -1,11 +1,11 @@
-// Redesigned UploadServicePage UI with full functionality and improved button positioning
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:uuid/uuid.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'dart:io';
+import 'package:uuid/uuid.dart';
 
 class UploadServicePage extends StatefulWidget {
   @override
@@ -35,24 +35,48 @@ class _UploadServicePageState extends State<UploadServicePage> {
     }
   }
 
-  Future<String> _saveImageLocally(File image, String serviceId) async {
-    final directory = await getApplicationDocumentsDirectory();
-    final imagePath = '${directory.path}/$serviceId.jpg';
-    final savedImage = await image.copy(imagePath);
-    return savedImage.path;
+  Future<String?> _uploadImageToCloudinary(File image) async {
+    try {
+      final url =
+          Uri.parse("https://api.cloudinary.com/v1_1/dtlbv6dxo/image/upload");
+      final request = http.MultipartRequest('POST', url);
+
+      request.fields['upload_preset'] =
+          'unimas_sq_preset1'; // Set in Cloudinary dashboard
+      request.files.add(await http.MultipartFile.fromPath('file', image.path));
+
+      final response = await request.send();
+      if (response.statusCode == 200) {
+        final responseData = await http.Response.fromStream(response);
+        final jsonResponse = json.decode(responseData.body);
+        return jsonResponse['secure_url'];
+      } else {
+        print('Cloudinary upload failed: ${response.statusCode}');
+        return null;
+      }
+    } catch (e) {
+      print('Error uploading to Cloudinary: $e');
+      return null;
+    }
   }
 
   void _uploadService() async {
     final uuid = Uuid();
     final serviceId = uuid.v4();
-    String? imagePath;
+    String? cloudinaryImageUrl;
 
     if (_serviceImage != null) {
       try {
-        imagePath = await _saveImageLocally(_serviceImage!, serviceId);
+        cloudinaryImageUrl = await _uploadImageToCloudinary(_serviceImage!);
+        if (cloudinaryImageUrl == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to upload image.')),
+          );
+          return;
+        }
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to save image: $e')),
+          SnackBar(content: Text('Image upload error: $e')),
         );
         return;
       }
@@ -65,7 +89,7 @@ class _UploadServicePageState extends State<UploadServicePage> {
         'description': _descriptionController.text,
         'category': _categoryController.text,
         'tags': _tagsController.text.split(','),
-        'imagePath': imagePath ?? '',
+        'imageUrl': cloudinaryImageUrl ?? '',
         'providerId': _auth.currentUser?.displayName ?? 'Unknown User',
         'rating': 0.0,
         'createdAt': DateTime.now().toIso8601String(),

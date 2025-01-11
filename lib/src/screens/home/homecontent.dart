@@ -1,7 +1,6 @@
-// Updated homecontent.dart for Jungle/Adventure Theme
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'dart:io';
+//import 'dart:io';
 import '../../models/servicemodels.dart';
 import 'servicetile.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -102,9 +101,9 @@ class HomeContent extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (service.imagePath.isNotEmpty)
-                      Image.file(
-                        File(service.imagePath),
+                    if (service.imageUrl.isNotEmpty)
+                      Image.network(
+                        service.imageUrl,
                         width: double.infinity,
                         fit: BoxFit.cover,
                       )

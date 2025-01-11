@@ -1,9 +1,7 @@
-// Updated servicetile.dart to reinforce background color
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../models/servicemodels.dart';
-import 'dart:io';
 
 class ServiceTile extends StatefulWidget {
   final ServiceModel service;
@@ -35,25 +33,25 @@ class _ServiceTileState extends State<ServiceTile> {
     }
   }
 
-  Future<double> _getAverageRating() async {
-    final ratingsSnapshot = await _firestore
+  Stream<double> _averageRatingStream() {
+    return _firestore
         .collection('services')
         .doc(widget.service.id)
         .collection('ratings')
-        .get();
+        .snapshots()
+        .map((snapshot) {
+      if (snapshot.docs.isEmpty) return 0.0;
 
-    if (ratingsSnapshot.docs.isEmpty) return 0;
-
-    final ratings =
-        ratingsSnapshot.docs.map((doc) => doc['rating'] as int).toList();
-    final averageRating = ratings.reduce((a, b) => a + b) / ratings.length;
-    return averageRating;
+      final ratings = snapshot.docs.map((doc) => doc['rating'] as int).toList();
+      final averageRating = ratings.reduce((a, b) => a + b) / ratings.length;
+      return averageRating;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<double>(
-      future: _getAverageRating(),
+    return StreamBuilder<double>(
+      stream: _averageRatingStream(),
       builder: (context, snapshot) {
         final averageRating = snapshot.data ?? 0;
 
@@ -62,7 +60,7 @@ class _ServiceTileState extends State<ServiceTile> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          color: Colors.green.shade200, // Ensures the jungle-green background
+          color: Colors.green.shade200,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -70,18 +68,12 @@ class _ServiceTileState extends State<ServiceTile> {
               Expanded(
                 child: ClipRRect(
                   borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-                  child: widget.service.imagePath.isNotEmpty
-                      ? (widget.service.imagePath.startsWith('http')
-                          ? Image.network(
-                              widget.service.imagePath,
-                              fit: BoxFit.cover,
-                              width: double.infinity,
-                            )
-                          : Image.file(
-                              File(widget.service.imagePath),
-                              fit: BoxFit.cover,
-                              width: double.infinity,
-                            ))
+                  child: widget.service.imageUrl.isNotEmpty
+                      ? Image.network(
+                          widget.service.imageUrl,
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                        )
                       : Container(
                           decoration: BoxDecoration(
                             color: Colors.green.shade300,

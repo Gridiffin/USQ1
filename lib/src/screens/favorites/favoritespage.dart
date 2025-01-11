@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'dart:io';
 import '../../models/servicemodels.dart';
 import 'servicedetailspage.dart';
 
@@ -92,20 +91,13 @@ class FavoritesPage extends StatelessWidget {
                       borderRadius: BorderRadius.circular(10.0),
                     ),
                     child: ListTile(
-                      leading: service.imagePath.isNotEmpty
-                          ? (service.imagePath.startsWith('http')
-                              ? Image.network(
-                                  service.imagePath,
-                                  width: 50,
-                                  height: 50,
-                                  fit: BoxFit.cover,
-                                )
-                              : Image.file(
-                                  File(service.imagePath),
-                                  width: 50,
-                                  height: 50,
-                                  fit: BoxFit.cover,
-                                ))
+                      leading: service.imageUrl.isNotEmpty
+                          ? Image.network(
+                              service.imageUrl,
+                              width: 50,
+                              height: 50,
+                              fit: BoxFit.cover,
+                            )
                           : Icon(Icons.image, size: 50, color: Colors.grey),
                       title: Text(
                         service.title,

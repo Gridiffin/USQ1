@@ -4,7 +4,7 @@ class ServiceModel {
   final String description;
   final String category;
   final List<String> tags;
-  final String imagePath;
+  final String imageUrl; // Renamed from imagePath
   final String providerId;
   final double rating;
   final DateTime createdAt;
@@ -15,7 +15,7 @@ class ServiceModel {
     required this.description,
     required this.category,
     required this.tags,
-    required this.imagePath,
+    required this.imageUrl,
     required this.providerId,
     required this.rating,
     required this.createdAt,
@@ -29,7 +29,7 @@ class ServiceModel {
       description: json['description'],
       category: json['category'],
       tags: List<String>.from(json['tags']),
-      imagePath: json['imagePath'] ?? '',
+      imageUrl: json['imageUrl'] ?? '', // Updated field
       providerId: json['providerId'],
       rating: (json['rating'] as num).toDouble(),
       createdAt: DateTime.parse(json['createdAt']),
@@ -44,7 +44,7 @@ class ServiceModel {
       'description': description,
       'category': category,
       'tags': tags,
-      'imagePath': imagePath,
+      'imageUrl': imageUrl, // Updated field
       'providerId': providerId,
       'rating': rating,
       'createdAt': createdAt.toIso8601String(),
