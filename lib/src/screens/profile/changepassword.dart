@@ -70,8 +70,10 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Change Password'),
-        backgroundColor: Colors.greenAccent,
+        title: Text('Change Password',
+            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+        centerTitle: true,
+        backgroundColor: Color(0xFF558B2F),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -80,7 +82,10 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
           children: [
             Text(
               'Change Password',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87),
             ),
             SizedBox(height: 30),
             TextField(
@@ -159,15 +164,18 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.greenAccent,
+                  backgroundColor: Color(0xFF558B2F),
                   padding: EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8.0),
+                  ),
                 ),
                 onPressed: () {
                   _handleSubmit(context);
                 },
                 child: Text(
                   'Submit',
-                  style: TextStyle(fontSize: 16, color: Colors.black),
+                  style: TextStyle(fontSize: 16, color: Colors.white),
                 ),
               ),
             ),

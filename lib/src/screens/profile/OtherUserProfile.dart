@@ -46,12 +46,57 @@ class OtherUserProfile extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(name),
+        title: Text(name, style: TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: Color(0xFF558B2F),
+        centerTitle: true,
       ),
-      body: Center(
-        child: ElevatedButton(
-          onPressed: () => _startChat(context, currentMatricId),
-          child: Text('Start Chat'),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            CircleAvatar(
+              radius: 60,
+              backgroundImage: AssetImage(
+                  'assets/images/profile_pic.png'), // Replace with user image logic
+            ),
+            SizedBox(height: 20),
+            Text(
+              name,
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+            ),
+            SizedBox(height: 8),
+            Text(
+              matricId,
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey[600],
+              ),
+            ),
+            SizedBox(height: 30),
+            ElevatedButton.icon(
+              onPressed: () => _startChat(context, currentMatricId),
+              icon: Icon(Icons.chat, color: Colors.white),
+              label: Text(
+                'Start Chat',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                padding: EdgeInsets.symmetric(vertical: 15, horizontal: 30),
+                backgroundColor: Color(0xFF558B2F),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

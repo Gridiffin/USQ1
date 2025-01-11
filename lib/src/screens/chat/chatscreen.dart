@@ -1,4 +1,3 @@
-// ChatScreen.dart
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -15,7 +14,9 @@ class ChatScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Chats'),
+        title: Text('Chats', style: TextStyle(fontWeight: FontWeight.bold)),
+        centerTitle: true,
+        backgroundColor: Color(0xFF558B2F),
       ),
       body: StreamBuilder(
         stream: _firestore
@@ -28,7 +29,12 @@ class ChatScreen extends StatelessWidget {
           }
           final chats = snapshot.data!.docs;
           if (chats.isEmpty) {
-            return Center(child: Text('No chats available'));
+            return Center(
+              child: Text(
+                'No chats available',
+                style: TextStyle(fontSize: 18, color: Colors.grey),
+              ),
+            );
           }
           return ListView.builder(
             itemCount: chats.length,
@@ -42,9 +48,6 @@ class ChatScreen extends StatelessWidget {
                 (id) => id != currentUserUid,
                 orElse: () => null,
               );
-
-              print(
-                  'Other participant UID: $otherParticipantUid'); // Debug line
 
               if (otherParticipantUid == null) {
                 return ListTile(
@@ -69,8 +72,6 @@ class ChatScreen extends StatelessWidget {
                   if (!userSnapshot.hasData ||
                       userSnapshot.data == null ||
                       !userSnapshot.data!.exists) {
-                    print(
-                        'Error: User document not found for UID $otherParticipantUid'); // Debug line
                     return ListTile(
                       title: Text('Unknown User ($otherParticipantUid)'),
                       subtitle: Text('User details not found'),
@@ -81,30 +82,49 @@ class ChatScreen extends StatelessWidget {
                       userSnapshot.data!.data() as Map<String, dynamic>?;
 
                   if (userData == null) {
-                    print(
-                        'Error: User data is null for UID $otherParticipantUid'); // Debug line
                     return ListTile(
                       title: Text('Unknown User ($otherParticipantUid)'),
                       subtitle: Text('User details not found'),
                     );
                   }
 
-                  return ListTile(
-                    title: Text(userData['name'] ?? 'Name not found'),
-                    subtitle: Text(chat['lastMessage'] ?? 'No messages yet'),
-                    onTap: () {
-                      if (chat.id.isNotEmpty) {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => IndividualChatScreen(
-                              chatId: chat.id,
-                              userName: userData['name'] ?? 'Unknown',
+                  return Card(
+                    margin: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: ListTile(
+                      leading: CircleAvatar(
+                        backgroundImage: userData['profileImage'] != null
+                            ? NetworkImage(userData['profileImage'])
+                            : AssetImage('assets/images/profile_pic.png')
+                                as ImageProvider,
+                        radius: 25,
+                      ),
+                      title: Text(
+                        userData['name'] ?? 'Name not found',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      subtitle: Text(
+                        chat['lastMessage'] ?? 'No messages yet',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(color: Colors.grey[600]),
+                      ),
+                      onTap: () {
+                        if (chat.id.isNotEmpty) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => IndividualChatScreen(
+                                chatId: chat.id,
+                                userName: userData['name'] ?? 'Unknown',
+                              ),
                             ),
-                          ),
-                        );
-                      }
-                    },
+                          );
+                        }
+                      },
+                    ),
                   );
                 },
               );

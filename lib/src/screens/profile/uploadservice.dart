@@ -1,10 +1,11 @@
+// Redesigned UploadServicePage UI with full functionality and improved button positioning
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
+import 'dart:io';
 
 class UploadServicePage extends StatefulWidget {
   @override
@@ -95,54 +96,82 @@ class _UploadServicePageState extends State<UploadServicePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Upload Service'),
+        title: Text('Upload Service',
+            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+        centerTitle: true,
+        backgroundColor: Color(0xFF558B2F),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              GestureDetector(
-                onTap: _pickImage,
-                child: Container(
-                  width: double.infinity,
-                  height: 200,
-                  color: Colors.grey[300],
-                  child: _serviceImage != null
-                      ? Image.file(_serviceImage!, fit: BoxFit.cover)
-                      : Icon(Icons.upload, size: 50, color: Colors.grey),
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            GestureDetector(
+              onTap: _pickImage,
+              child: Container(
+                height: 200,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                    color: Colors.grey[200],
+                    borderRadius: BorderRadius.circular(10.0),
+                    border: Border.all(color: Colors.grey[400]!)),
+                child: _serviceImage == null
+                    ? Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.add_a_photo,
+                              size: 50, color: Colors.grey[500]),
+                          SizedBox(height: 10),
+                          Text('Tap to select an image',
+                              style: TextStyle(color: Colors.grey[500])),
+                        ],
+                      )
+                    : Image.file(_serviceImage!, fit: BoxFit.cover),
+              ),
+            ),
+            SizedBox(height: 10),
+            TextField(
+              controller: _titleController,
+              decoration: InputDecoration(
+                  labelText: 'Title', border: OutlineInputBorder()),
+            ),
+            SizedBox(height: 10),
+            TextField(
+              controller: _descriptionController,
+              decoration: InputDecoration(
+                  labelText: 'Description', border: OutlineInputBorder()),
+            ),
+            SizedBox(height: 10),
+            TextField(
+              controller: _categoryController,
+              decoration: InputDecoration(
+                  labelText: 'Category', border: OutlineInputBorder()),
+            ),
+            SizedBox(height: 10),
+            TextField(
+              controller: _tagsController,
+              decoration: InputDecoration(
+                  labelText: 'Tags (comma-separated)',
+                  border: OutlineInputBorder()),
+            ),
+            SizedBox(height: 20),
+            Align(
+              alignment: Alignment.centerRight,
+              child: ElevatedButton.icon(
+                onPressed: _uploadService,
+                icon: Icon(Icons.cloud_upload, color: Colors.white),
+                label: Text('Upload', style: TextStyle(color: Colors.white)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Color(0xFF558B2F),
+                  padding:
+                      EdgeInsets.symmetric(vertical: 14.0, horizontal: 20.0),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8.0),
+                  ),
                 ),
               ),
-              SizedBox(height: 10),
-              TextButton(
-                onPressed: _pickImage,
-                child: Text('Pick Image'),
-              ),
-              TextField(
-                controller: _titleController,
-                decoration: InputDecoration(labelText: 'Title'),
-              ),
-              TextField(
-                controller: _descriptionController,
-                decoration: InputDecoration(labelText: 'Description'),
-              ),
-              TextField(
-                controller: _categoryController,
-                decoration: InputDecoration(labelText: 'Category'),
-              ),
-              TextField(
-                controller: _tagsController,
-                decoration:
-                    InputDecoration(labelText: 'Tags (comma separated)'),
-              ),
-              SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: _uploadService,
-                child: Text('Upload Service'),
-              ),
-            ],
-          ),
+            ),
+          ]),
         ),
       ),
     );

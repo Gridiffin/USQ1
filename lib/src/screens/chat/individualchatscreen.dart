@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../models/chatmessagemodels.dart';
+import '../profile/otheruserprofile.dart';
 
 class IndividualChatScreen extends StatefulWidget {
   final String chatId;
@@ -44,6 +45,19 @@ class _IndividualChatScreenState extends State<IndividualChatScreen> {
     _messageController.clear();
   }
 
+  void _navigateToUserProfile(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => OtherUserProfile(
+          matricId:
+              widget.chatId, // Replace with the actual matricId of the user
+          name: widget.userName,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final currentUserMatricId = _auth.currentUser?.email?.split('@')[0] ??
@@ -51,7 +65,14 @@ class _IndividualChatScreenState extends State<IndividualChatScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.userName),
+        title: GestureDetector(
+          onTap: () => _navigateToUserProfile(context),
+          child: Text(
+            widget.userName,
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+        ),
+        backgroundColor: Color(0xFF558B2F),
       ),
       body: Column(
         children: [
@@ -88,10 +109,15 @@ class _IndividualChatScreenState extends State<IndividualChatScreen> {
                             EdgeInsets.symmetric(vertical: 5, horizontal: 10),
                         padding: EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: isMe ? Colors.blue : Colors.grey[300],
+                          color: isMe ? Color(0xFF558B2F) : Colors.grey[300],
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: Text(message.text),
+                        child: Text(
+                          message.text,
+                          style: TextStyle(
+                            color: isMe ? Colors.white : Colors.black,
+                          ),
+                        ),
                       ),
                     );
                   },
@@ -111,11 +137,13 @@ class _IndividualChatScreenState extends State<IndividualChatScreen> {
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(20),
                       ),
+                      fillColor: Colors.white,
+                      filled: true,
                     ),
                   ),
                 ),
                 IconButton(
-                  icon: Icon(Icons.send),
+                  icon: Icon(Icons.send, color: Color(0xFF558B2F)),
                   onPressed: _sendMessage,
                 ),
               ],

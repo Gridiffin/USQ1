@@ -11,17 +11,25 @@ class FavoritesPage extends StatelessWidget {
     if (userId == null) {
       return Scaffold(
         appBar: AppBar(
-          title: Text('Favorites'),
+          title:
+              Text('Favorites', style: TextStyle(fontWeight: FontWeight.bold)),
+          centerTitle: true,
+          backgroundColor: Color(0xFF558B2F),
         ),
         body: Center(
-          child: Text('Please log in to view your favorites.'),
+          child: Text(
+            'Please log in to view your favorites.',
+            style: TextStyle(fontSize: 18, color: Colors.black87),
+          ),
         ),
       );
     }
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Favorites'),
+        title: Text('Favorites', style: TextStyle(fontWeight: FontWeight.bold)),
+        centerTitle: true,
+        backgroundColor: Color(0xFF558B2F),
       ),
       body: StreamBuilder(
         stream: FirebaseFirestore.instance
@@ -73,6 +81,12 @@ class FavoritesPage extends StatelessWidget {
                   }
 
                   return Card(
+                    color: Colors.white,
+                    shadowColor: Colors.black54,
+                    elevation: 5,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10.0),
+                    ),
                     child: ListTile(
                       leading: serviceData['imagePath'] != null
                           ? (serviceData['imagePath']
@@ -91,9 +105,16 @@ class FavoritesPage extends StatelessWidget {
                                   fit: BoxFit.cover,
                                 ))
                           : Icon(Icons.image, size: 50, color: Colors.grey),
-                      title: Text(serviceData['title'] ?? 'Unknown Title'),
-                      subtitle: Text(serviceData['description'] ??
-                          'No description available'),
+                      title: Text(
+                        serviceData['title'] ?? 'Unknown Title',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      subtitle: Text(
+                        serviceData['description'] ??
+                            'No description available',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                       trailing: IconButton(
                         icon: Icon(Icons.delete, color: Colors.red),
                         onPressed: () async {
@@ -102,14 +123,6 @@ class FavoritesPage extends StatelessWidget {
                               .collection('favorites')
                               .doc(userId)
                               .collection('userFavorites')
-                              .doc(favoriteId)
-                              .delete();
-
-                          // Remove the service from the user's lovedServices
-                          await FirebaseFirestore.instance
-                              .collection('users')
-                              .doc(userId)
-                              .collection('lovedServices')
                               .doc(favoriteId)
                               .delete();
 
@@ -162,7 +175,8 @@ class ServiceDetailPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(title),
+        title: Text(title, style: TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: Color(0xFF558B2F),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),

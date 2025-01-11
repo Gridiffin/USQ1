@@ -1,4 +1,4 @@
-// screens/profile/profilepage.dart
+// Redesigned ProfilePage with header removed
 import 'package:flutter/material.dart';
 import 'uploadservice.dart';
 import 'changepassword.dart';
@@ -14,7 +14,7 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  String userName = 'Anonymous';
+  String userName = 'Explorer';
   String? userProfileImage;
 
   @override
@@ -23,7 +23,12 @@ class _ProfilePageState extends State<ProfilePage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Profile'),
+        title: Text('',
+            style:
+                TextStyle(fontWeight: FontWeight.bold)), // Header text removed
+        centerTitle: true,
+        elevation: 0,
+        backgroundColor: Color(0xFF558B2F),
       ),
       body: FutureBuilder<DocumentSnapshot>(
         future:
@@ -38,96 +43,167 @@ class _ProfilePageState extends State<ProfilePage> {
           }
 
           final userData = snapshot.data!.data() as Map<String, dynamic>;
-          userName = userData['name'] ?? 'Anonymous';
+          userName = userData['name'] ?? 'Explorer';
           userProfileImage = userData['imageUrl'];
           final String userEmail = user?.email ?? 'No Email';
 
-          return Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Column(
-                    children: [
-                      CircleAvatar(
-                        radius: 50,
-                        backgroundImage: userProfileImage != null
-                            ? FileImage(File(userProfileImage!))
-                            : AssetImage('assets/images/profile_pic.png')
-                                as ImageProvider,
-                      ),
-                      SizedBox(height: 10),
-                      Text(
-                        userName,
-                        style: TextStyle(
-                            fontSize: 24, fontWeight: FontWeight.bold),
-                      ),
-                      SizedBox(height: 5),
-                      Text(
-                        userEmail,
-                        style: TextStyle(fontSize: 16, color: Colors.grey),
-                      ),
-                    ],
-                  ),
-                ),
-                Divider(),
-                ListTile(
-                  leading: Icon(Icons.settings, color: Colors.green),
-                  title: Text('Settings'),
-                  onTap: () async {
-                    final result = await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            SettingsPage(user: user, currentName: userName),
-                      ),
-                    );
-                    if (result != null && result is Map<String, dynamic>) {
-                      setState(() {
-                        userName = result['name'] ?? userName;
-                        userProfileImage =
-                            result['imageUrl'] ?? userProfileImage;
-                      });
-                    }
-                  },
-                ),
-                Divider(),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          return Column(
+            children: [
+              Container(
+                color: Color(0xFF8BC34A),
+                padding: EdgeInsets.all(16.0),
+                child: Row(
                   children: [
-                    TextButton(
-                      onPressed: () {
-                        _navigateToUploadService(context);
-                      },
-                      child: Text(
-                        'Upload Service',
-                        style: TextStyle(color: Colors.green),
-                      ),
+                    CircleAvatar(
+                      radius: 50,
+                      backgroundImage: userProfileImage != null
+                          ? FileImage(File(userProfileImage!))
+                          : AssetImage('assets/images/profile_pic.png')
+                              as ImageProvider,
                     ),
-                    TextButton(
-                      onPressed: () {
-                        _navigateToChangePassword(context);
-                      },
-                      child: Text(
-                        'Change Password',
-                        style: TextStyle(color: Colors.green),
+                    SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            userName,
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                          SizedBox(height: 5),
+                          Text(
+                            userEmail,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.white70,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
-                Divider(),
-                ListTile(
-                  leading: Icon(Icons.logout, color: Colors.green),
-                  title: Text('Logout'),
-                  onTap: () {
-                    _handleLogout(context);
-                  },
+              ),
+              Expanded(
+                child: Container(
+                  padding: EdgeInsets.all(16.0),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(20.0),
+                      topRight: Radius.circular(20.0),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Account Actions',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey[800],
+                        ),
+                      ),
+                      SizedBox(height: 15),
+                      _buildLeftAlignedButton(
+                        context,
+                        'Settings',
+                        Icons.settings,
+                        () async {
+                          final result = await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => SettingsPage(
+                                  user: user, currentName: userName),
+                            ),
+                          );
+                          if (result != null &&
+                              result is Map<String, dynamic>) {
+                            setState(() {
+                              userName = result['name'] ?? userName;
+                              userProfileImage =
+                                  result['imageUrl'] ?? userProfileImage;
+                            });
+                          }
+                        },
+                      ),
+                      SizedBox(height: 10),
+                      _buildLeftAlignedButton(
+                        context,
+                        'Change Password',
+                        Icons.lock,
+                        () {
+                          _navigateToChangePassword(context);
+                        },
+                      ),
+                      SizedBox(height: 10),
+                      _buildLeftAlignedButton(
+                        context,
+                        'Upload Service',
+                        Icons.upload,
+                        () {
+                          _navigateToUploadService(context);
+                        },
+                      ),
+                      Spacer(),
+                      _buildLogoutButton(context),
+                    ],
+                  ),
                 ),
-              ],
-            ),
+              ),
+            ],
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildLeftAlignedButton(
+      BuildContext context, String label, IconData icon, VoidCallback onPressed,
+      {Color backgroundColor = const Color(0xFF558B2F)}) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: ElevatedButton.icon(
+        onPressed: onPressed,
+        icon: Icon(icon, color: Colors.white),
+        label: Text(
+          label,
+          style: TextStyle(color: Colors.white, fontSize: 16),
+        ),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: backgroundColor,
+          padding: EdgeInsets.symmetric(vertical: 14.0, horizontal: 10.0),
+          alignment: Alignment.centerLeft,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8.0),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLogoutButton(BuildContext context) {
+    return ElevatedButton.icon(
+      onPressed: () {
+        _handleLogout(context);
+      },
+      icon: Icon(Icons.logout, color: Colors.white),
+      label: Text(
+        'Logout',
+        style: TextStyle(color: Colors.white, fontSize: 16),
+      ),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.redAccent,
+        padding: EdgeInsets.symmetric(vertical: 14.0, horizontal: 10.0),
+        alignment: Alignment.centerLeft,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8.0),
+        ),
       ),
     );
   }
@@ -151,11 +227,9 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   void _handleLogout(BuildContext context) {
-    // Perform logout actions (e.g., clear user data, navigate to login screen)
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Logged out successfully')),
     );
-    // Navigate to login screen
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(

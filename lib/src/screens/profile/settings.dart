@@ -101,8 +101,7 @@ class _SettingsPageState extends State<SettingsPage> {
       appBar: AppBar(
         title: Text('Settings', style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
-        backgroundColor: Colors.greenAccent,
-        elevation: 0,
+        backgroundColor: Color(0xFF558B2F),
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -125,7 +124,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 onPressed: _pickImage,
                 child: Text(
                   'Change Profile Picture',
-                  style: TextStyle(color: Colors.black, fontSize: 16),
+                  style: TextStyle(color: Colors.green[900], fontSize: 16),
                 ),
               ),
               SizedBox(height: 30),
@@ -135,13 +134,13 @@ class _SettingsPageState extends State<SettingsPage> {
                   labelStyle: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w500,
-                      color: Colors.black),
+                      color: Colors.green[900]),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
-                    borderSide: BorderSide(color: Colors.black),
+                    borderSide: BorderSide(color: Colors.green[700]!),
                   ),
                 ),
                 controller: _nameController,
@@ -154,13 +153,13 @@ class _SettingsPageState extends State<SettingsPage> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  backgroundColor: Colors.greenAccent,
+                  backgroundColor: Color(0xFF558B2F),
                 ),
                 child: Text('Save',
                     style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Colors.black)),
+                        color: Colors.white)),
               ),
             ],
           ),
