@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../chat/individualchatscreen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class OtherUserProfile extends StatelessWidget {
   final String matricId; // User's matric ID
@@ -8,21 +9,39 @@ class OtherUserProfile extends StatelessWidget {
 
   OtherUserProfile({required this.matricId, required this.name});
 
-  Future<void> _startChat(BuildContext context, String currentMatricId) async {
-    final chatId = _generateChatId(currentMatricId, matricId);
+  Future<void> _startChat(BuildContext context) async {
+    final currentUserUid = FirebaseAuth.instance.currentUser?.uid;
+    if (currentUserUid == null) {
+      print("User not logged in");
+      return;
+    }
 
-    // Ensure chat exists in Firestore
+    // Fetch other user's UID from matricId
+    final otherUserUid = await getUidFromMatricId(matricId);
+
+    // Ensure `otherUserUid` is valid and is NOT the chat's document ID
+    if (otherUserUid == null || otherUserUid == currentUserUid) {
+      print("Invalid otherUserUid or chatting with self.");
+      return;
+    }
+
+    // Generate consistent chat ID
+    final chatId = _generateChatId(currentUserUid, otherUserUid);
+
+    // Check if the chat already exists
     final chatRef = FirebaseFirestore.instance.collection('chats').doc(chatId);
     final chatDoc = await chatRef.get();
 
     if (!chatDoc.exists) {
+      // Create the chat if it doesn't exist
       await chatRef.set({
-        'participants': [currentMatricId, matricId],
+        'participants': [currentUserUid, otherUserUid],
         'lastMessage': '',
         'timestamp': Timestamp.now(),
       });
     }
 
+    // Navigate to the chat screen
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -34,16 +53,33 @@ class OtherUserProfile extends StatelessWidget {
     );
   }
 
-  String _generateChatId(String matricId1, String matricId2) {
-    final sortedIds = [matricId1, matricId2]..sort();
-    return sortedIds.join('_');
+  Future<String?> getUidFromMatricId(String matricId) async {
+    try {
+      final query = await FirebaseFirestore.instance
+          .collection('users')
+          .where('matricId', isEqualTo: matricId)
+          .limit(1)
+          .get();
+
+      if (query.docs.isNotEmpty) {
+        return query.docs.first.id; // Return the UID
+      } else {
+        print("No user found for matricId: $matricId");
+        return null; // No match found
+      }
+    } catch (e) {
+      print("Error fetching UID from matricId: $e");
+      return null;
+    }
+  }
+
+  String _generateChatId(String uid1, String uid2) {
+    final sortedUids = [uid1, uid2]..sort();
+    return sortedUids.join('_');
   }
 
   @override
   Widget build(BuildContext context) {
-    final currentMatricId =
-        "current_user_matric_id"; // Replace with actual logic
-
     return Scaffold(
       appBar: AppBar(
         title: Text(name, style: TextStyle(fontWeight: FontWeight.bold)),
@@ -78,7 +114,7 @@ class OtherUserProfile extends StatelessWidget {
             ),
             SizedBox(height: 30),
             ElevatedButton.icon(
-              onPressed: () => _startChat(context, currentMatricId),
+              onPressed: () => _startChat(context),
               icon: Icon(Icons.chat, color: Colors.white),
               label: Text(
                 'Start Chat',

@@ -1,15 +1,15 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ChatMessage {
-  final String id;
-  final String text;
-  final String senderMatricId;
-  final DateTime timestamp;
+  final String id; // Message ID
+  final String text; // Message text
+  final String senderUid; // Firebase UID of the sender
+  final DateTime timestamp; // Timestamp of the message
 
   ChatMessage({
     required this.id,
     required this.text,
-    required this.senderMatricId,
+    required this.senderUid,
     required this.timestamp,
   });
 
@@ -18,7 +18,7 @@ class ChatMessage {
     return ChatMessage(
       id: id,
       text: json['text'] ?? '',
-      senderMatricId: json['senderMatricId'] ?? '',
+      senderUid: json['senderUid'] ?? '', // Use senderUid instead of matricId
       timestamp: (json['timestamp'] as Timestamp).toDate(),
     );
   }
@@ -27,7 +27,7 @@ class ChatMessage {
   Map<String, dynamic> toJson() {
     return {
       'text': text,
-      'senderMatricId': senderMatricId,
+      'senderUid': senderUid, // Save senderUid
       'timestamp': timestamp,
     };
   }

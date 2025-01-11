@@ -22,13 +22,12 @@ class _IndividualChatScreenState extends State<IndividualChatScreen> {
   void _sendMessage() async {
     if (_messageController.text.trim().isEmpty) return;
 
-    final senderMatricId = _auth.currentUser?.email?.split('@')[0] ??
-        ''; // Assume matricId is derived from email
+    final senderUid = _auth.currentUser?.uid ?? '';
 
     final newMessage = ChatMessage(
       id: '',
       text: _messageController.text.trim(),
-      senderMatricId: senderMatricId,
+      senderUid: senderUid,
       timestamp: DateTime.now(),
     );
 
@@ -45,23 +44,42 @@ class _IndividualChatScreenState extends State<IndividualChatScreen> {
     _messageController.clear();
   }
 
-  void _navigateToUserProfile(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => OtherUserProfile(
-          matricId:
-              widget.chatId, // Replace with the actual matricId of the user
-          name: widget.userName,
-        ),
-      ),
-    );
+  void _navigateToUserProfile(BuildContext context) async {
+    try {
+      final chatDoc =
+          await _firestore.collection('chats').doc(widget.chatId).get();
+      if (chatDoc.exists) {
+        final participants = chatDoc['participants'] as List<dynamic>;
+        final otherUserUid = participants.firstWhere(
+          (uid) => uid != _auth.currentUser?.uid,
+          orElse: () => null,
+        );
+
+        if (otherUserUid != null) {
+          final userDoc =
+              await _firestore.collection('users').doc(otherUserUid).get();
+          if (userDoc.exists) {
+            final userData = userDoc.data() as Map<String, dynamic>;
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => OtherUserProfile(
+                  matricId: userData['matricId'],
+                  name: userData['name'],
+                ),
+              ),
+            );
+          }
+        }
+      }
+    } catch (e) {
+      print("Error navigating to user profile: $e");
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final currentUserMatricId = _auth.currentUser?.email?.split('@')[0] ??
-        ''; // Assume matricId is derived from email
+    final currentUserUid = _auth.currentUser?.uid ?? '';
 
     return Scaffold(
       appBar: AppBar(
@@ -99,23 +117,24 @@ class _IndividualChatScreenState extends State<IndividualChatScreen> {
                   itemCount: messages.length,
                   itemBuilder: (context, index) {
                     final message = messages[index];
-                    final isMe = message.senderMatricId == currentUserMatricId;
-
                     return Align(
-                      alignment:
-                          isMe ? Alignment.centerRight : Alignment.centerLeft,
+                      alignment: _getMessageAlignment(message.senderUid),
                       child: Container(
                         margin:
                             EdgeInsets.symmetric(vertical: 5, horizontal: 10),
                         padding: EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: isMe ? Color(0xFF558B2F) : Colors.grey[300],
+                          color: message.senderUid == currentUserUid
+                              ? Color(0xFF558B2F)
+                              : Colors.grey[300],
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
                           message.text,
                           style: TextStyle(
-                            color: isMe ? Colors.white : Colors.black,
+                            color: message.senderUid == currentUserUid
+                                ? Colors.white
+                                : Colors.black,
                           ),
                         ),
                       ),
@@ -152,5 +171,11 @@ class _IndividualChatScreenState extends State<IndividualChatScreen> {
         ],
       ),
     );
+  }
+
+  Alignment _getMessageAlignment(String senderUid) {
+    return senderUid == _auth.currentUser?.uid
+        ? Alignment.centerRight
+        : Alignment.centerLeft;
   }
 }

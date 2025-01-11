@@ -1,16 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'individualchatscreen.dart'; // Import the IndividualChatScreen file
+import 'individualchatscreen.dart';
 
 class ChatScreen extends StatelessWidget {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
+  Future<Map<String, dynamic>?> _fetchUserDetails(String uid) async {
+    try {
+      print("Fetching details for UID: $uid");
+      final userDoc =
+          await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      if (userDoc.exists) {
+        return userDoc.data();
+      } else {
+        print("User not found for UID: $uid");
+      }
+    } catch (e) {
+      print("Error fetching user details: $e");
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final currentUserUid =
-        _auth.currentUser?.uid ?? ''; // Get the current user's UID
+    final currentUserUid = _auth.currentUser?.uid ?? '';
 
     return Scaffold(
       appBar: AppBar(
@@ -49,6 +64,8 @@ class ChatScreen extends StatelessWidget {
                 orElse: () => null,
               );
 
+              print("Other Participant UID: $otherParticipantUid"); // Debug Log
+
               if (otherParticipantUid == null) {
                 return ListTile(
                   title: Text('Unknown User'),
@@ -56,37 +73,24 @@ class ChatScreen extends StatelessWidget {
                 );
               }
 
-              return FutureBuilder(
-                future: _firestore
-                    .collection('users')
-                    .doc(otherParticipantUid)
-                    .get(),
-                builder:
-                    (context, AsyncSnapshot<DocumentSnapshot> userSnapshot) {
+              return FutureBuilder<Map<String, dynamic>?>(
+                future: _fetchUserDetails(otherParticipantUid),
+                builder: (context,
+                    AsyncSnapshot<Map<String, dynamic>?> userSnapshot) {
                   if (userSnapshot.connectionState == ConnectionState.waiting) {
                     return ListTile(
                       title: Text('Loading...'),
                     );
                   }
 
-                  if (!userSnapshot.hasData ||
-                      userSnapshot.data == null ||
-                      !userSnapshot.data!.exists) {
+                  if (!userSnapshot.hasData || userSnapshot.data == null) {
                     return ListTile(
                       title: Text('Unknown User ($otherParticipantUid)'),
                       subtitle: Text('User details not found'),
                     );
                   }
 
-                  final userData =
-                      userSnapshot.data!.data() as Map<String, dynamic>?;
-
-                  if (userData == null) {
-                    return ListTile(
-                      title: Text('Unknown User ($otherParticipantUid)'),
-                      subtitle: Text('User details not found'),
-                    );
-                  }
+                  final userData = userSnapshot.data!;
 
                   return Card(
                     margin: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
