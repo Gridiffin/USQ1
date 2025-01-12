@@ -2,11 +2,55 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../models/servicemodels.dart';
+import '../chat/individualchatscreen.dart';
 
 class ServiceDetailsPage extends StatelessWidget {
   final ServiceModel service;
 
   ServiceDetailsPage({required this.service});
+
+  Future<void> _startChat(BuildContext context, String uploaderName) async {
+    final FirebaseAuth _auth = FirebaseAuth.instance;
+    final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+    final currentUserUid = _auth.currentUser?.uid;
+
+    if (currentUserUid == null) {
+      print("User not logged in");
+      return;
+    }
+
+    // Fetch chat ID
+    final chatId = _generateChatId(currentUserUid, service.providerId);
+
+    // Check if the chat exists
+    final chatRef = _firestore.collection('chats').doc(chatId);
+    final chatDoc = await chatRef.get();
+
+    if (!chatDoc.exists) {
+      // Create the chat if it doesn't exist
+      await chatRef.set({
+        'participants': [currentUserUid, service.providerId],
+        'lastMessage': '',
+        'timestamp': Timestamp.now(),
+      });
+    }
+
+    // Navigate to Individual Chat Screen
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => IndividualChatScreen(
+          chatId: chatId,
+          userName: uploaderName, // Use uploader's name here
+        ),
+      ),
+    );
+  }
+
+  String _generateChatId(String uid1, String uid2) {
+    final sortedUids = [uid1, uid2]..sort();
+    return sortedUids.join('_');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -15,10 +59,14 @@ class ServiceDetailsPage extends StatelessWidget {
     final FirebaseAuth _auth = FirebaseAuth.instance;
     double _currentRating = 0;
 
-    Future<String> _getUploaderName(String providerId) async {
-      final userDoc =
-          await _firestore.collection('users').doc(providerId).get();
-      return userDoc.exists ? userDoc['name'] ?? 'Unknown' : 'Unknown';
+    Future<String> _getUploaderName(String uid) async {
+      try {
+        final userDoc = await _firestore.collection('users').doc(uid).get();
+        return userDoc.exists ? userDoc['name'] ?? 'Unknown' : 'Unknown';
+      } catch (e) {
+        print('Error fetching uploader name: $e');
+        return 'Unknown';
+      }
     }
 
     return FutureBuilder<String>(
@@ -91,12 +139,10 @@ class ServiceDetailsPage extends StatelessWidget {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.green,
                       ),
-                      onPressed: () {
-                        Navigator.pushNamed(context, '/chat', arguments: {
-                          'receiverId': service.providerId,
-                          'receiverName': uploaderName,
-                        });
-                      },
+                      onPressed: snapshot.hasData
+                          ? () => _startChat(
+                              context, snapshot.data!) // Pass uploaderName here
+                          : null,
                       child: Text('Chat'),
                     ),
                   ),
@@ -156,7 +202,8 @@ class ServiceDetailsPage extends StatelessWidget {
                                 .doc(service.id)
                                 .collection('comments')
                                 .add({
-                              'userId': _auth.currentUser!.email ?? 'Anonymous',
+                              'userId':
+                                  _auth.currentUser!.uid, // Updated to use UID
                               'text': _commentController.text,
                             });
                             _commentController.clear();
@@ -192,12 +239,13 @@ class ServiceDetailsPage extends StatelessWidget {
                               setState(() {
                                 _currentRating = index + 1;
                               });
-                              final userEmail = _auth.currentUser!.email;
+                              final userUid =
+                                  _auth.currentUser!.uid; // Updated to use UID
                               final ratingRef = _firestore
                                   .collection('services')
                                   .doc(service.id)
                                   .collection('ratings')
-                                  .doc(userEmail);
+                                  .doc(userUid);
 
                               await ratingRef.set({'rating': index + 1});
                             },

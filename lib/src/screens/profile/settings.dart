@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
-import 'package:path_provider/path_provider.dart';
 
 class SettingsPage extends StatefulWidget {
   final User? user;
@@ -42,23 +43,52 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
+  Future<String?> _uploadImageToCloudinary(File image) async {
+    try {
+      final url =
+          Uri.parse("https://api.cloudinary.com/v1_1/dtlbv6dxo/image/upload");
+      final request = http.MultipartRequest('POST', url);
+
+      request.fields['upload_preset'] =
+          'unimas_sq_preset1'; // Cloudinary preset
+      request.files.add(await http.MultipartFile.fromPath('file', image.path));
+
+      final response = await request.send();
+      if (response.statusCode == 200) {
+        final responseData = await http.Response.fromStream(response);
+        final jsonResponse = json.decode(responseData.body);
+        return jsonResponse['secure_url'];
+      } else {
+        print('Cloudinary upload failed: ${response.statusCode}');
+        return null;
+      }
+    } catch (e) {
+      print('Error uploading to Cloudinary: $e');
+      return null;
+    }
+  }
+
   Future<void> _updateUserProfileImage(File image) async {
     try {
-      final appDir = await getApplicationDocumentsDirectory();
-      final fileName = '${widget.user!.uid}_profile.png';
-      final savedImage = await image.copy('${appDir.path}/$fileName');
-      final imageUrl = savedImage.path;
+      final imageUrl = await _uploadImageToCloudinary(image);
 
-      final userDoc =
-          FirebaseFirestore.instance.collection('users').doc(widget.user!.uid);
+      if (imageUrl != null) {
+        final userDoc = FirebaseFirestore.instance
+            .collection('users')
+            .doc(widget.user!.uid);
 
-      await userDoc.update({
-        'imageUrl': imageUrl,
-      });
+        await userDoc.update({
+          'imageUrl': imageUrl,
+        });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Profile picture updated successfully!')),
-      );
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Profile picture updated successfully!')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to upload image to Cloudinary.')),
+        );
+      }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to update profile picture: $e')),
@@ -115,9 +145,26 @@ class _SettingsPageState extends State<SettingsPage> {
                   backgroundImage: FileImage(_profileImage!),
                 )
               else
-                CircleAvatar(
-                  radius: 60,
-                  backgroundImage: AssetImage('assets/images/profile_pic.png'),
+                StreamBuilder<DocumentSnapshot>(
+                  stream: FirebaseFirestore.instance
+                      .collection('users')
+                      .doc(widget.user!.uid)
+                      .snapshots(),
+                  builder: (context, snapshot) {
+                    if (snapshot.hasData &&
+                        snapshot.data!.get('imageUrl') != null) {
+                      return CircleAvatar(
+                        radius: 60,
+                        backgroundImage:
+                            NetworkImage(snapshot.data!.get('imageUrl')),
+                      );
+                    }
+                    return CircleAvatar(
+                      radius: 60,
+                      backgroundImage:
+                          AssetImage('assets/images/profile_pic.png'),
+                    );
+                  },
                 ),
               SizedBox(height: 10),
               TextButton(

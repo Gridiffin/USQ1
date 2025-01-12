@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../models/servicemodels.dart';
-import 'servicedetailspage.dart';
+import '../shared/servicedetailspage.dart';
 
 class FavoritesPage extends StatelessWidget {
   @override
@@ -67,18 +67,15 @@ class FavoritesPage extends StatelessWidget {
                 builder:
                     (context, AsyncSnapshot<DocumentSnapshot> serviceSnapshot) {
                   if (!serviceSnapshot.hasData) {
-                    return ListTile(
-                      title: Text('Loading...'),
-                    );
+                    return SizedBox
+                        .shrink(); // Skip rendering until data is ready
                   }
 
                   final serviceData =
                       serviceSnapshot.data!.data() as Map<String, dynamic>?;
 
-                  if (serviceData == null) {
-                    return ListTile(
-                      title: Text('Service not found'),
-                    );
+                  if (serviceData == null || serviceData.isEmpty) {
+                    return SizedBox.shrink(); // Skip missing services
                   }
 
                   final service = ServiceModel.fromJson(serviceData);

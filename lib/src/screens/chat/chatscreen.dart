@@ -9,13 +9,10 @@ class ChatScreen extends StatelessWidget {
 
   Future<Map<String, dynamic>?> _fetchUserDetails(String uid) async {
     try {
-      print("Fetching details for UID: $uid");
       final userDoc =
           await FirebaseFirestore.instance.collection('users').doc(uid).get();
       if (userDoc.exists) {
         return userDoc.data();
-      } else {
-        print("User not found for UID: $uid");
       }
     } catch (e) {
       print("Error fetching user details: $e");
@@ -55,16 +52,13 @@ class ChatScreen extends StatelessWidget {
             itemCount: chats.length,
             itemBuilder: (context, index) {
               final chat = chats[index];
-              final List<dynamic>? participants =
-                  chat['participants'] as List<dynamic>?;
+              final participants = chat['participants'] as List<dynamic>?;
 
               // Extract the other participant's UID
               final otherParticipantUid = participants?.firstWhere(
                 (id) => id != currentUserUid,
                 orElse: () => null,
               );
-
-              print("Other Participant UID: $otherParticipantUid"); // Debug Log
 
               if (otherParticipantUid == null) {
                 return ListTile(
@@ -78,19 +72,18 @@ class ChatScreen extends StatelessWidget {
                 builder: (context,
                     AsyncSnapshot<Map<String, dynamic>?> userSnapshot) {
                   if (userSnapshot.connectionState == ConnectionState.waiting) {
-                    return ListTile(
-                      title: Text('Loading...'),
-                    );
+                    return ListTile(title: Text('Loading...'));
                   }
 
                   if (!userSnapshot.hasData || userSnapshot.data == null) {
                     return ListTile(
-                      title: Text('Unknown User ($otherParticipantUid)'),
+                      title: Text('Unknown User'),
                       subtitle: Text('User details not found'),
                     );
                   }
 
                   final userData = userSnapshot.data!;
+                  final profileImage = userData['imageUrl'];
 
                   return Card(
                     margin: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
@@ -99,8 +92,8 @@ class ChatScreen extends StatelessWidget {
                     ),
                     child: ListTile(
                       leading: CircleAvatar(
-                        backgroundImage: userData['profileImage'] != null
-                            ? NetworkImage(userData['profileImage'])
+                        backgroundImage: profileImage != null
+                            ? NetworkImage(profileImage)
                             : AssetImage('assets/images/profile_pic.png')
                                 as ImageProvider,
                         radius: 25,
@@ -116,17 +109,15 @@ class ChatScreen extends StatelessWidget {
                         style: TextStyle(color: Colors.grey[600]),
                       ),
                       onTap: () {
-                        if (chat.id.isNotEmpty) {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => IndividualChatScreen(
-                                chatId: chat.id,
-                                userName: userData['name'] ?? 'Unknown',
-                              ),
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => IndividualChatScreen(
+                              chatId: chat.id,
+                              userName: userData['name'] ?? 'Unknown',
                             ),
-                          );
-                        }
+                          ),
+                        );
                       },
                     ),
                   );

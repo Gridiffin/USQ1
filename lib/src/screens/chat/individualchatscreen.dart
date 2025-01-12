@@ -85,9 +85,23 @@ class _IndividualChatScreenState extends State<IndividualChatScreen> {
       appBar: AppBar(
         title: GestureDetector(
           onTap: () => _navigateToUserProfile(context),
-          child: Text(
-            widget.userName,
-            style: TextStyle(fontWeight: FontWeight.bold),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                widget.userName,
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 4),
+              Text(
+                'Tap here to view profile',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontStyle: FontStyle.italic,
+                  color: Colors.white70,
+                ),
+              ),
+            ],
           ),
         ),
         backgroundColor: Color(0xFF558B2F),

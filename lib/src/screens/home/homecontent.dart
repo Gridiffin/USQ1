@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-//import 'dart:io';
 import '../../models/servicemodels.dart';
 import 'servicetile.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -13,12 +12,7 @@ class HomeContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(
-        image: DecorationImage(
-          image: AssetImage('assets/jungle_background.jpg'),
-          fit: BoxFit.cover,
-        ),
-      ),
+      color: Colors.white, // Set background to white
       child: StreamBuilder(
         stream: FirebaseFirestore.instance.collection('services').snapshots(),
         builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
@@ -79,10 +73,14 @@ class HomeContent extends StatelessWidget {
     final FirebaseAuth _auth = FirebaseAuth.instance;
     double _currentRating = 0;
 
-    Future<String> _getUploaderName(String providerId) async {
-      final userDoc =
-          await _firestore.collection('users').doc(providerId).get();
-      return userDoc.exists ? userDoc['name'] ?? 'Unknown' : 'Unknown';
+    Future<String> _getUploaderName(String uid) async {
+      try {
+        final userDoc = await _firestore.collection('users').doc(uid).get();
+        return userDoc.exists ? userDoc['name'] ?? 'Unknown' : 'Unknown';
+      } catch (e) {
+        print('Error fetching uploader name: $e');
+        return 'Unknown';
+      }
     }
 
     showModalBottomSheet(

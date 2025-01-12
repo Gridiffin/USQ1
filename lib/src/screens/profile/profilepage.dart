@@ -1,12 +1,9 @@
-// Redesigned ProfilePage with header removed
 import 'package:flutter/material.dart';
-import 'uploadservice.dart';
-import 'changepassword.dart';
-import '../auth/loginscreen.dart';
-import 'settings.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'dart:io';
+import 'settings.dart';
+import 'uploadservice.dart';
+import '../auth/loginscreen.dart';
 
 class ProfilePage extends StatefulWidget {
   @override
@@ -23,11 +20,8 @@ class _ProfilePageState extends State<ProfilePage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('',
-            style:
-                TextStyle(fontWeight: FontWeight.bold)), // Header text removed
+        title: Text('Profile', style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
-        elevation: 0,
         backgroundColor: Color(0xFF558B2F),
       ),
       body: FutureBuilder<DocumentSnapshot>(
@@ -57,7 +51,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     CircleAvatar(
                       radius: 50,
                       backgroundImage: userProfileImage != null
-                          ? FileImage(File(userProfileImage!))
+                          ? NetworkImage(userProfileImage!)
                           : AssetImage('assets/images/profile_pic.png')
                               as ImageProvider,
                     ),
@@ -221,7 +215,8 @@ class _ProfilePageState extends State<ProfilePage> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => ChangePasswordPage(),
+        builder: (context) => SettingsPage(
+            user: FirebaseAuth.instance.currentUser, currentName: userName),
       ),
     );
   }
