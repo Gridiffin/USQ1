@@ -1,43 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart'; // For themed fonts
 import '../../services/authservice.dart';
-import 'registerscreen.dart';
-import 'forgotpasswordscreen.dart'; // Import the Forgot Password screen
-import '../home/homepage.dart';
 
-class LoginScreen extends StatefulWidget {
+class ForgotPasswordScreen extends StatefulWidget {
   @override
-  _LoginScreenState createState() => _LoginScreenState();
+  _ForgotPasswordScreenState createState() => _ForgotPasswordScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
   final AuthService _authService = AuthService();
+  String? _message;
 
-  bool _isPasswordVisible = false;
-  String? _errorMessage;
-
-  void _login() async {
+  void _resetPassword() async {
     setState(() {
-      _errorMessage = null;
+      _message = null;
     });
     try {
-      final user = await _authService.loginWithEmailAndPassword(
-          _emailController.text.trim(), _passwordController.text.trim());
-      if (user != null && user.emailVerified) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => HomePage()),
-        );
-      } else if (user != null && !user.emailVerified) {
-        setState(() {
-          _errorMessage = "Email is not verified. Please verify your email.";
-        });
-      }
+      await _authService.sendPasswordResetEmail(_emailController.text.trim());
+      setState(() {
+        _message =
+            "Password reset email has been sent. Please check your inbox.";
+      });
     } catch (error) {
       setState(() {
-        _errorMessage = error.toString();
+        _message = error.toString();
       });
     }
   }
@@ -69,7 +56,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text(
-                      'Welcome Back!',
+                      'Forgot Password',
                       style: GoogleFonts.adventPro(
                         textStyle: TextStyle(
                           fontSize: 28.0,
@@ -85,63 +72,16 @@ class _LoginScreenState extends State<LoginScreen> {
                       decoration: InputDecoration(
                         filled: true,
                         fillColor: Colors.white.withOpacity(0.8),
-                        prefixIcon: Icon(Icons.person, color: Colors.brown),
-                        hintText: 'Username or Email',
+                        prefixIcon: Icon(Icons.email, color: Colors.brown),
+                        hintText: 'Enter your email',
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8.0),
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 15),
-                    TextField(
-                      controller: _passwordController,
-                      obscureText: !_isPasswordVisible,
-                      decoration: InputDecoration(
-                        filled: true,
-                        fillColor: Colors.white.withOpacity(0.8),
-                        prefixIcon: Icon(Icons.lock, color: Colors.brown),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _isPasswordVisible
-                                ? Icons.visibility
-                                : Icons.visibility_off,
-                            color: Colors.brown,
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              _isPasswordVisible = !_isPasswordVisible;
-                            });
-                          },
-                        ),
-                        hintText: 'Password',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8.0),
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 10),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => ForgotPasswordScreen()),
-                          );
-                        },
-                        child: Text(
-                          'Forgot Password?',
-                          style: TextStyle(
-                            color: Colors.orangeAccent,
-                            fontWeight: FontWeight.bold,
-                          ),
                         ),
                       ),
                     ),
                     SizedBox(height: 20),
                     ElevatedButton(
-                      onPressed: _login,
+                      onPressed: _resetPassword,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.green,
                         padding: EdgeInsets.symmetric(vertical: 16.0),
@@ -150,37 +90,37 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                       child: Text(
-                        'Login',
+                        'Send Reset Email',
                         style: TextStyle(
                           fontSize: 16.0,
                           color: Colors.white,
                         ),
                       ),
                     ),
-                    if (_errorMessage != null) ...[
+                    if (_message != null) ...[
                       SizedBox(height: 10),
                       Text(
-                        _errorMessage!,
-                        style: TextStyle(color: Colors.red),
+                        _message!,
+                        style: TextStyle(
+                          color: _message!.contains("error")
+                              ? Colors.red
+                              : Colors.green,
+                        ),
                         textAlign: TextAlign.center,
                       ),
                     ],
                     SizedBox(height: 20),
                     GestureDetector(
                       onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => RegisterScreen()),
-                        );
+                        Navigator.pop(context);
                       },
                       child: Text.rich(
                         TextSpan(
-                          text: 'Create An Account ',
+                          text: 'Remember your password? ',
                           style: TextStyle(color: Colors.white),
                           children: [
                             TextSpan(
-                              text: 'Sign Up',
+                              text: 'Back to Login',
                               style: TextStyle(
                                 color: Colors.orangeAccent,
                                 fontWeight: FontWeight.bold,
