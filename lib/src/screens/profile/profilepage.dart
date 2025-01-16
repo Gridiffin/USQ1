@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'settings.dart';
 import 'uploadservice.dart';
 import '../auth/loginscreen.dart';
+import 'changepassword.dart';
 
 class ProfilePage extends StatefulWidget {
   @override
@@ -215,8 +216,7 @@ class _ProfilePageState extends State<ProfilePage> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => SettingsPage(
-            user: FirebaseAuth.instance.currentUser, currentName: userName),
+        builder: (context) => ChangePasswordPage(),
       ),
     );
   }
