@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../models/servicemodels.dart';
 import 'servicetile.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../chat/individualchatscreen.dart';
 
 class HomeContent extends StatelessWidget {
   final String? searchQuery;
@@ -148,12 +149,47 @@ class HomeContent extends StatelessWidget {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.green,
                         ),
-                        onPressed: () {
-                          Navigator.pushNamed(context, '/chat', arguments: {
-                            'receiverId': service.providerId,
-                            'receiverName': uploaderName,
-                          });
-                        },
+                        onPressed: snapshot.hasData
+                            ? () async {
+                                final currentUserUid = _auth.currentUser?.uid;
+
+                                if (currentUserUid == null) {
+                                  print("User not logged in");
+                                  return;
+                                }
+
+                                // Fetch chat ID
+                                final chatId = _generateChatId(
+                                    currentUserUid, service.providerId);
+
+                                // Check if the chat exists
+                                final chatRef =
+                                    _firestore.collection('chats').doc(chatId);
+                                final chatDoc = await chatRef.get();
+
+                                if (!chatDoc.exists) {
+                                  // Create the chat if it doesn't exist
+                                  await chatRef.set({
+                                    'participants': [
+                                      currentUserUid,
+                                      service.providerId
+                                    ],
+                                    'lastMessage': '',
+                                    'timestamp': Timestamp.now(),
+                                  });
+                                }
+
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => IndividualChatScreen(
+                                      chatId: chatId,
+                                      userName: uploaderName,
+                                    ),
+                                  ),
+                                );
+                              }
+                            : null,
                         child: Text('Chat'),
                       ),
                     ),
@@ -272,5 +308,10 @@ class HomeContent extends StatelessWidget {
         );
       },
     );
+  }
+
+  String _generateChatId(String uid1, String uid2) {
+    final sortedUids = [uid1, uid2]..sort();
+    return sortedUids.join('_');
   }
 }
