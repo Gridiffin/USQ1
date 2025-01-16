@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../services/authservice.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../../services/authservice.dart';
 import 'loginscreen.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -22,6 +22,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   String? _errorMessage;
   bool _isPasswordHidden = true;
   bool _isConfirmPasswordHidden = true;
+  bool _isLoading = false;
 
   Future<bool> _isMatricIdUnique(String matricId) async {
     final querySnapshot = await _firestore
@@ -35,48 +36,66 @@ class _RegisterScreenState extends State<RegisterScreen> {
   void _register() async {
     setState(() {
       _errorMessage = null;
+      _isLoading = true; // Show loading indicator
     });
 
-    if (!_emailController.text.trim().endsWith("unimas.my")) {
+    // Normalize email input
+    final email = _emailController.text.trim().toLowerCase();
+    final password = _passwordController.text.trim();
+    final confirmPassword = _confirmPasswordController.text.trim();
+    final matricId = _matricIdController.text.trim();
+    final name = _nameController.text.trim();
+
+    if (!email.endsWith("unimas.my")) {
       setState(() {
         _errorMessage = "Only UNIMAS emails are allowed.";
+        _isLoading = false;
       });
       return;
     }
 
-    if (_passwordController.text != _confirmPasswordController.text) {
+    if (password != confirmPassword) {
       setState(() {
         _errorMessage = "Passwords do not match.";
+        _isLoading = false;
       });
       return;
     }
 
-    final isUnique = await _isMatricIdUnique(_matricIdController.text.trim());
+    if (matricId.isEmpty) {
+      setState(() {
+        _errorMessage = "Matric ID cannot be empty.";
+        _isLoading = false;
+      });
+      return;
+    }
+
+    final isUnique = await _isMatricIdUnique(matricId);
     if (!isUnique) {
       setState(() {
         _errorMessage = "Matric ID already exists.";
+        _isLoading = false;
       });
       return;
     }
 
     try {
-      User? user = await _authService.registerWithEmailAndPassword(
-          _emailController.text.trim(), _passwordController.text.trim());
+      User? user = await _authService.registerWithEmailAndPassword(email, password);
       if (user != null) {
         // Save additional user data to Firestore
         await _firestore.collection('users').doc(user.uid).set({
-          'name': _nameController.text.trim(),
-          'matricId': _matricIdController.text.trim(),
-          'email': user.email,
+          'name': name,
+          'matricId': matricId,
+          'email': email,
           'createdAt': Timestamp.now(),
         });
 
         await _authService.sendEmailVerification(user);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Verification email sent!')),
+          SnackBar(content: Text('Verification email sent! Please check your inbox.')),
         );
 
-        // Navigate back to LoginScreen
+        // Navigate to LoginScreen
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => LoginScreen()),
@@ -84,7 +103,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
       }
     } catch (error) {
       setState(() {
-        _errorMessage = error.toString();
+        _errorMessage = error.toString().contains(']')
+            ? error.toString().split(']').last.trim()
+            : "An unexpected error occurred. Please try again.";
+      });
+    } finally {
+      setState(() {
+        _isLoading = false; // Hide loading indicator
       });
     }
   }
@@ -101,19 +126,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return Scaffold(
       body: Stack(
         children: [
+          // Background
           Container(
             decoration: BoxDecoration(
               image: DecorationImage(
-                image: AssetImage(
-                    'lib/src/images/jungle_background.jpg'), // Jungle-themed background
+                image: AssetImage('lib/src/images/jungle_background.jpg'),
                 fit: BoxFit.cover,
               ),
             ),
           ),
-          Container(
-            color:
-                Colors.black.withOpacity(0.3), // Add semi-transparent overlay
-          ),
+          // Semi-transparent overlay
+          Container(color: Colors.black.withOpacity(0.3)),
+          // Form
           Center(
             child: SingleChildScrollView(
               child: Padding(
@@ -176,9 +200,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         prefixIcon: Icon(Icons.lock, color: Colors.brown),
                         suffixIcon: IconButton(
                           icon: Icon(
-                            _isPasswordHidden
-                                ? Icons.visibility
-                                : Icons.visibility_off,
+                            _isPasswordHidden ? Icons.visibility : Icons.visibility_off,
                             color: Colors.brown,
                           ),
                           onPressed: () {
@@ -201,15 +223,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         prefixIcon: Icon(Icons.lock, color: Colors.brown),
                         suffixIcon: IconButton(
                           icon: Icon(
-                            _isConfirmPasswordHidden
-                                ? Icons.visibility
-                                : Icons.visibility_off,
+                            _isConfirmPasswordHidden ? Icons.visibility : Icons.visibility_off,
                             color: Colors.brown,
                           ),
                           onPressed: () {
                             setState(() {
-                              _isConfirmPasswordHidden =
-                                  !_isConfirmPasswordHidden;
+                              _isConfirmPasswordHidden = !_isConfirmPasswordHidden;
                             });
                           },
                         ),
@@ -217,20 +236,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                     ),
                     SizedBox(height: 20),
-                    ElevatedButton(
-                      onPressed: _register,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        padding: EdgeInsets.symmetric(vertical: 16.0),
-                      ),
-                      child: Text(
-                        'Create Account',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.white,
+                    if (_isLoading)
+                      Center(child: CircularProgressIndicator(color: Colors.white))
+                    else
+                      ElevatedButton(
+                        onPressed: _register,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          padding: EdgeInsets.symmetric(vertical: 16.0),
+                        ),
+                        child: Text(
+                          'Create Account',
+                          style: TextStyle(fontSize: 16, color: Colors.white),
                         ),
                       ),
-                    ),
                     SizedBox(height: 20),
                     Center(
                       child: Wrap(
