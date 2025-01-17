@@ -5,6 +5,8 @@ import 'settings.dart';
 import 'uploadservice.dart';
 import '../auth/loginscreen.dart';
 import 'changepassword.dart';
+import '../shared/servicedetailspage.dart';
+import '../../models/servicemodels.dart';
 
 class ProfilePage extends StatefulWidget {
   @override
@@ -14,6 +16,43 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   String userName = 'Explorer';
   String? userProfileImage;
+
+  Stream<QuerySnapshot> _fetchUserServices(String userId) {
+    return FirebaseFirestore.instance
+        .collection('services')
+        .where('providerId', isEqualTo: userId)
+        .snapshots();
+  }
+
+  Stream<double> _averageRatingStream(String serviceId) {
+    return FirebaseFirestore.instance
+        .collection('services')
+        .doc(serviceId)
+        .collection('ratings')
+        .snapshots()
+        .map((snapshot) {
+      if (snapshot.docs.isEmpty) return 0.0;
+      final ratings = snapshot.docs.map((doc) => doc['rating'] as int).toList();
+      final averageRating = ratings.reduce((a, b) => a + b) / ratings.length;
+      return averageRating;
+    });
+  }
+
+  Future<void> _deleteService(String serviceId) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('services')
+          .doc(serviceId)
+          .delete();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Service deleted successfully!')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to delete service: $e')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -40,51 +79,51 @@ class _ProfilePageState extends State<ProfilePage> {
           final userData = snapshot.data!.data() as Map<String, dynamic>;
           userName = userData['name'] ?? 'Explorer';
           userProfileImage = userData['imageUrl'];
-          final String userEmail = user?.email ?? 'No Email';
+          final String userId = user?.uid ?? '';
 
-          return Column(
-            children: [
-              Container(
-                color: Color(0xFF8BC34A),
-                padding: EdgeInsets.all(16.0),
-                child: Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 50,
-                      backgroundImage: userProfileImage != null
-                          ? NetworkImage(userProfileImage!)
-                          : AssetImage('assets/images/profile_pic.png')
-                              as ImageProvider,
-                    ),
-                    SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            userName,
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                          SizedBox(height: 5),
-                          Text(
-                            userEmail,
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.white70,
-                            ),
-                          ),
-                        ],
+          return SingleChildScrollView(
+            child: Column(
+              children: [
+                Container(
+                  color: Color(0xFF8BC34A),
+                  padding: EdgeInsets.all(16.0),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 50,
+                        backgroundImage: userProfileImage != null
+                            ? NetworkImage(userProfileImage!)
+                            : AssetImage('assets/images/profile_pic.png')
+                                as ImageProvider,
                       ),
-                    ),
-                  ],
+                      SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              userName,
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                            SizedBox(height: 5),
+                            Text(
+                              user?.email ?? 'No Email',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.white70,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              Expanded(
-                child: Container(
+                Container(
                   padding: EdgeInsets.all(16.0),
                   decoration: BoxDecoration(
                     color: Colors.white,
@@ -96,6 +135,101 @@ class _ProfilePageState extends State<ProfilePage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      Text(
+                        'Services Uploaded by You',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey[800],
+                        ),
+                      ),
+                      SizedBox(height: 10),
+                      StreamBuilder<QuerySnapshot>(
+                        stream: _fetchUserServices(userId),
+                        builder: (context, snapshot) {
+                          if (!snapshot.hasData) {
+                            return Center(child: CircularProgressIndicator());
+                          }
+
+                          final services = snapshot.data!.docs;
+
+                          if (services.isEmpty) {
+                            return Center(
+                              child: Text(
+                                'No services uploaded yet.',
+                                style:
+                                    TextStyle(fontSize: 16, color: Colors.grey),
+                              ),
+                            );
+                          }
+
+                          return ListView.builder(
+                            physics: NeverScrollableScrollPhysics(),
+                            shrinkWrap: true,
+                            itemCount: services.length,
+                            itemBuilder: (context, index) {
+                              final serviceData = services[index].data()
+                                  as Map<String, dynamic>;
+                              final serviceId = services[index].id;
+                              final service =
+                                  ServiceModel.fromJson(serviceData);
+
+                              return StreamBuilder<double>(
+                                stream: _averageRatingStream(serviceId),
+                                builder: (context, ratingSnapshot) {
+                                  final averageRating =
+                                      ratingSnapshot.data ?? 0.0;
+                                  return Card(
+                                    margin: EdgeInsets.symmetric(vertical: 8),
+                                    child: ListTile(
+                                      leading: service.imageUrl != null
+                                          ? Image.network(
+                                              service.imageUrl,
+                                              width: 50,
+                                              height: 50,
+                                              fit: BoxFit.cover,
+                                            )
+                                          : Icon(Icons.image,
+                                              size: 50, color: Colors.grey),
+                                      title: Text(
+                                        service.title ?? 'Untitled',
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.bold),
+                                      ),
+                                      subtitle: Text(
+                                        averageRating > 0
+                                            ? 'Rating: ${averageRating.toStringAsFixed(1)}'
+                                            : 'No ratings yet',
+                                        style: TextStyle(
+                                            fontSize: 14,
+                                            color: Colors.black87),
+                                      ),
+                                      onTap: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                ServiceDetailsPage(
+                                                    service: service),
+                                          ),
+                                        );
+                                      },
+                                      trailing: IconButton(
+                                        icon: Icon(Icons.delete,
+                                            color: Colors.red),
+                                        onPressed: () {
+                                          _deleteService(serviceId);
+                                        },
+                                      ),
+                                    ),
+                                  );
+                                },
+                              );
+                            },
+                          );
+                        },
+                      ),
+                      SizedBox(height: 20),
                       Text(
                         'Account Actions',
                         style: TextStyle(
@@ -145,13 +279,13 @@ class _ProfilePageState extends State<ProfilePage> {
                           _navigateToUploadService(context);
                         },
                       ),
-                      Spacer(),
+                      SizedBox(height: 20),
                       _buildLogoutButton(context),
                     ],
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           );
         },
       ),

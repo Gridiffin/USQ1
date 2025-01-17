@@ -76,7 +76,8 @@ class _HomePageState extends State<HomePage> {
                   )
                 : Text('Side Quest',
                     style: TextStyle(color: Colors.green.shade100)))
-            : Text('Profile', style: TextStyle(color: Colors.green.shade100)),
+            : Text('Side Quest',
+                style: TextStyle(color: Colors.green.shade100)),
         actions: [
           if (_selectedIndex != 2 && !_showSearchBar)
             IconButton(
