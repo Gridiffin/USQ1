@@ -2,7 +2,7 @@ import 'package:firebase_core/firebase_core.dart'; // Import Firebase Core
 import 'package:flutter/material.dart';
 import 'firebase_options.dart'; // Import generated Firebase options
 import 'src/screens/splash/splashscreen.dart';
-import 'src/screens/home/homepage.dart'; // Import HomePage
+//import 'src/screens/home/homepage.dart'; // Import HomePage
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized(); // Ensures proper initialization

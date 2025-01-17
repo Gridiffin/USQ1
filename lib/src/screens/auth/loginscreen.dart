@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart'; // For themed fonts
-import 'package:cloud_firestore/cloud_firestore.dart'; // Import Firestore
+//import 'package:cloud_firestore/cloud_firestore.dart'; // Import Firestore
 import '../../services/authservice.dart';
 import 'registerscreen.dart';
 import 'forgotpasswordscreen.dart'; // Import the Forgot Password screen
-import '../home/homepage.dart';
-import '../admin/adminpanelpage.dart';
+//import '../home/homepage.dart';
+//import '../admin/adminpanelpage.dart';
 import '../shared/rolebasedredirect.dart';
 
 class LoginScreen extends StatefulWidget {

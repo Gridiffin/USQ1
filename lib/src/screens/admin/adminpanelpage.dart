@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'userlistpage.dart';
+import 'manageservice.dart';
+import 'reportspage.dart';
 
 class AdminPanelPage extends StatelessWidget {
   final Map<String, dynamic> adminData;
@@ -54,10 +56,10 @@ class AdminPanelPage extends StatelessWidget {
                     const SizedBox(height: 15),
                     _buildLeftAlignedButton(
                       context,
-                      'Manage Ads',
+                      'Manage Services',
                       Icons.manage_accounts,
                       () {
-                        _navigateToManageAds(context);
+                        _navigateToManageServices(context);
                       },
                     ),
                     const SizedBox(height: 15),
@@ -110,10 +112,10 @@ class AdminPanelPage extends StatelessWidget {
     );
   }
 
-  void _navigateToManageAds(BuildContext context) {
+  void _navigateToManageServices(BuildContext context) {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => const ManageAdsPage()),
+      MaterialPageRoute(builder: (context) => const ManageServicesPage()),
     );
   }
 
@@ -121,54 +123,6 @@ class AdminPanelPage extends StatelessWidget {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const ReportsPage()),
-    );
-  }
-}
-
-class UserListPage extends StatelessWidget {
-  const UserListPage({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    // Placeholder for User List screen
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('User List'),
-        backgroundColor: const Color(0xFF558B2F),
-      ),
-      body: const Center(child: Text('User List Page')),
-    );
-  }
-}
-
-class ManageAdsPage extends StatelessWidget {
-  const ManageAdsPage({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    // Placeholder for Manage Ads screen
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Manage Ads'),
-        backgroundColor: const Color(0xFF558B2F),
-      ),
-      body: const Center(child: Text('Manage Ads Page')),
-    );
-  }
-}
-
-class ReportsPage extends StatelessWidget {
-  const ReportsPage({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    // Placeholder for Reports screen
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Reports'),
-        backgroundColor: const Color(0xFF558B2F),
-      ),
-      body: const Center(child: Text('Reports Page')),
     );
   }
 }
