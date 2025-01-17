@@ -1,4 +1,3 @@
-// Simplified SplashScreen with jungle/adventure theme
 import 'package:flutter/material.dart';
 import 'dart:async';
 import '../auth/loginscreen.dart';

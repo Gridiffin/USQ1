@@ -20,9 +20,6 @@ class MyApp extends StatelessWidget {
       // Add 'return' here to return the MaterialApp widget
       debugShowCheckedModeBanner: false,
       home: SplashScreen(), // Start with SplashScreen
-      routes: {
-        '/home': (context) => HomePage(), // Define the route for HomePage
-      },
     );
   }
 }
